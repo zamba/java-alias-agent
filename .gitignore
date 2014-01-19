@@ -22,3 +22,9 @@
 *.jar
 *.war
 *.ear
+
+
+ninja
+alias/ninja
+output
+alias/output
