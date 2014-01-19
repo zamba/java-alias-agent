@@ -24,7 +24,6 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	des = desc;
 	acc = access;
 	klass = owner;
-	//System.out.println("From: MethodEnterAdapter Visiting:"+name);
     }
 
 
@@ -150,7 +149,6 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	    boolean isNewVar = addASTORE(var);
 	    // result is true if this was the first ASTORE to var
 
-	    //System.out.println(met + " " + des + " " + var);
 	    dup(); // #1
 	    if (isNewVar) {
 		push((String)null);
@@ -168,9 +166,6 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 		push((String)null);	         // #4
 	    }
 	    if (acc != H_INVOKEINTERFACE && acc != ACC_STATIC && acc != 10) {
-		// System.out.println("H_INVOKEINTERFACE:" + H_INVOKEINTERFACE);
-		// System.out.println("ACC_STATIC:" + ACC_STATIC);
-		// System.out.println("acc:" + acc + " opcode: " + opcode);
 		loadThis();                      // #5
 	    }
 	    else {
@@ -232,7 +227,6 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 		pop();
 		//objref value objref value objref
 		
-		//System.out.println(desc);
 		
 		if(c == 'L' || c == '[') {
 
@@ -331,9 +325,6 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 				   "currentThread",
 				   "()Ljava/lang/Thread;"); //9
 
-
-		// System.out.println("Putstatic: " + owner + " " + desc
-		// 		   + " " + acc + " ACCSTATIC= " + ACC_STATIC);
 		mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","storeField",
 				   "(Ljava/lang/Object;" +    // objref          #1
 				   "Ljava/lang/Object;" +     // stored obj      #2
@@ -460,7 +451,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	// ref ref name desc stccaller
 
 	if (acc != H_INVOKEINTERFACE && acc != ACC_STATIC && acc != 10) {
-	    System.out.println("a: " + acc);
+	    //System.out.println("a: " + acc);
 	    loadThis(); //5
 	}
 	else {
