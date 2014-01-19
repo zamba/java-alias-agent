@@ -692,9 +692,9 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
       *new_class_data_len = len;
       *new_class_data = newclass;
     }
-    cout << "Instrumented:";
-    printf("%s",name);
-    cout << endl;
+    // cout << "Instrumented:";
+    // printf("%s",name);
+    // cout << endl;
   }exit_critical_section();
 }
 
