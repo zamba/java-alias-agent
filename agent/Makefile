@@ -18,15 +18,19 @@ all:
 	javac  *.java
 	javah NativeInterface
 	$(CC) -std=c++11 -o ninja ninja.cpp
-	$(CC) -c -fPIC -std=c++11 $(IFLAGS) alias.cpp eventlist.cpp
-	$(CC) -shared -o testagent.so alias.o eventlist.o
+	$(CC) -c -fPIC -std=c++11 $(IFLAGS) alias.cpp eventlist.cpp test.cpp
+	$(CC) -shared -o testagent.so alias.o eventlist.o test.o
 
 test:
-	java -agentpath:./testagent.so Test
+	java -agentpath:./testagent.so=test,1 test/Allocation
+	java -agentpath:./testagent.so=test,13 test/Allocation
 
 jartest:
 	jar cvfe jartest.jar Test Test.class Foo.class Bar.class
 	java  -agentpath:./testagent.so -jar jartest.jar
+
+bench:
+	java -agentpath:./testagent.so -jar ~/Desktop/dacapo-9.12-bach.jar batik	
 
 clean:
 	rm -f *.class
@@ -36,5 +40,6 @@ clean:
 	rm -f output
 	rm -f ninja
 	rm -f *.log
+	rm -f jartest.jar
 
-.PHONY: clean
+.PHONY: clean test bench

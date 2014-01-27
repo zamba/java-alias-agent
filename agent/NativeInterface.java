@@ -1,3 +1,5 @@
+import java.util.LinkedList;
+
 public class NativeInterface {
     //not used yet
     public static native void methodExit(Object returned,
@@ -55,5 +57,14 @@ public class NativeInterface {
 				       String static_callee,
 				       Object callee,
 				       Thread thread);
+
+    public static int exists(int var,LinkedList l) {
+	// for (Integer i:l) {
+	//     if (var == i) {
+	// 	return 1;
+	//     }
+	// }
+	return 0;
+    }
 
 }
