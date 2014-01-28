@@ -14,11 +14,11 @@ using namespace std;
 
 // set variables will be recorded
 bool alloc=true;
-bool methodEnter=true;
-bool getField = true;
-bool storeField = true;
-bool returns = true;
-bool storeVar = true;
+bool methodEnter=false;
+bool getField = false;
+bool storeField = false;
+bool returns = false;
+bool storeVar = false;
 
 bool test = false;
 int testnr = 0;
@@ -74,6 +74,10 @@ static void exit_critical_section() {
   jvmtiError error;
   error = g_jvmti->RawMonitorExit(g_lock);
 }
+
+/******************************************************************************/
+/* javastr->cstring | gettag                                                  */
+/******************************************************************************/
 
 /*
   returns a string(c++ string) copied from str(java string)
@@ -146,13 +150,12 @@ JNIEXPORT void JNICALL Java_NativeInterface_storeVar
 
 /* 
    TODO:
-   * make use of toCPS()
-   * merge with loadField()
+
    */
 JNIEXPORT void JNICALL Java_NativeInterface_storeField
 (JNIEnv *env,
  jclass native_interface,
- jobject obj,
+ jobject callee,
  jobject value,
  jobject old_value,
  jstring owner,
@@ -164,32 +167,24 @@ JNIEXPORT void JNICALL Java_NativeInterface_storeField
 {
   if (storeField) {
     enter_critical_section(); {
-      jlong old_value_tag = get_tag(old_value);
-      jlong callee_tag = get_tag(obj);
       jlong caller_tag = get_tag(caller);
+      jlong callee_tag = get_tag(callee);
       jlong value_tag = get_tag(value);
+      jlong old_value_tag = get_tag(old_value);
 
-      const char* c_owner;
-      const char* c_name;
-      const char* c_desc;
-      const char* c_caller;
-      c_owner = env->GetStringUTFChars(owner, NULL);
-      c_name = env->GetStringUTFChars(name, NULL);
-      c_desc = env->GetStringUTFChars(desc, NULL);
+      string cp_field = toCPS(env,name);
+      string cp_desc = toCPS(env,desc);
 
-      string cp_name = c_name;
-      string cp_desc = c_desc;
-      string cp_caller;
       string cp_callee;
       if (callee_tag == 0) {
-	cp_callee = c_owner;
+	cp_callee = toCPS(env,owner);
       }
 
-      if (static_caller != NULL) {
-	c_caller = env->GetStringUTFChars(static_caller, NULL);
-	cp_caller = c_caller;
+      string cp_caller;
+      if (caller_tag == 0) {
+	cp_caller = toCPS(env,static_caller);
       }
-      StoreField *event = new StoreField(cp_name,
+      StoreField *event = new StoreField(cp_field,
 					 cp_desc,
 					 cp_caller,
 					 cp_callee,
@@ -198,27 +193,19 @@ JNIEXPORT void JNICALL Java_NativeInterface_storeField
 					 value_tag,
 					 old_value_tag);
       eventlist.push_back(event);
-      if (static_caller != NULL) {
-	env->ReleaseStringUTFChars(static_caller, c_caller);
-      }
 
-      env->ReleaseStringUTFChars(owner, c_owner);
-      env->ReleaseStringUTFChars(name, c_name);
-      env->ReleaseStringUTFChars(desc, c_desc);
     } exit_critical_section(); 
   }
 }
 
-
 /* 
    TODO:
-   * make use of toCPS()
-   * merge with storeField()
+
    */
 JNIEXPORT void JNICALL Java_NativeInterface_loadField
 (JNIEnv *env,
  jclass native_interface,
- jobject obj,
+ jobject callee,
  jobject value,
  jstring owner,
  jstring name,
@@ -229,41 +216,24 @@ JNIEXPORT void JNICALL Java_NativeInterface_loadField
 {
   if (getField) {
     enter_critical_section(); {
-      const char* c_owner;
-      const char* c_name;
-      const char* c_desc;
-      const char* c_caller;
-      c_owner = env->GetStringUTFChars(owner, NULL);
-      c_name = env->GetStringUTFChars(name, NULL);
-      c_desc = env->GetStringUTFChars(desc, NULL);
+      jlong caller_tag = get_tag(caller);
+      jlong callee_tag = get_tag(callee);
+      jlong value_tag = get_tag(value);
 
-      jlong caller_tag = 0;
-      jlong callee_tag = 0;
-      jlong value_tag = 0;
-      if (caller!=NULL) {
-	g_jvmti->GetTag(caller,&caller_tag);
-      }
-      if (obj!=NULL) {
-	g_jvmti->GetTag(obj,&callee_tag);
-      }
+      string cp_field = toCPS(env,name);
+      string cp_desc = toCPS(env,desc);
 
-      if (value!=NULL) {
-	g_jvmti->GetTag(value,&value_tag);
-      }
-
-      string cp_name = c_name;
-      string cp_desc = c_desc;
-      string cp_caller;
       string cp_callee;
       if (callee_tag == 0) {
-	cp_callee = c_owner;
+	cp_callee = toCPS(env,owner);
       }
 
-      if (static_caller != NULL) {
-	c_caller = env->GetStringUTFChars(static_caller, NULL);
-	cp_caller = c_caller;
+      string cp_caller;
+      if (caller_tag == 0) {
+	cp_caller = toCPS(env,static_caller);
       }
-      GetField *event = new GetField(cp_name,
+
+      GetField *event = new GetField(cp_field,
 				     cp_desc,
 				     cp_caller,
 				     cp_callee,
@@ -271,23 +241,14 @@ JNIEXPORT void JNICALL Java_NativeInterface_loadField
 				     callee_tag,
 				     value_tag);
       eventlist.push_back(event);
-      if (static_caller != NULL) {
-	env->ReleaseStringUTFChars(static_caller, c_caller);
-      }
-
-      env->ReleaseStringUTFChars(owner, c_owner);
-      env->ReleaseStringUTFChars(name, c_name);
-      env->ReleaseStringUTFChars(desc, c_desc);
     }exit_critical_section(); 
   }
 }
 
-
-/* 
+/*
    TODO:
-   * make use of toCPS() and get_tag()
-   * merge with storeField()
-   * make shorter
+     * Move get caller part to a separate function
+     * Move get arg objs to a separate function
    */
 JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
 (JNIEnv *env,
@@ -300,41 +261,26 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
  jthread thread)
 {
   enter_critical_section(); {
-    
-    jlong tag_currentthis = 0;
-    jlong tag_caller = 0;
-    const char* cmet;
-    const char* cdes;
-    if (callee) {
-      g_jvmti->GetTag(callee, &tag_currentthis);
+    string cp_name = toCPS(env,met);
+    string cp_desc = toCPS(env,desc);
+    jlong callee_tag = get_tag(callee);
+    string cp_callee;
+    if (callee_tag == 0) {
+      cp_callee = toCPS(env,staticcallee);
     }
-
-    // get methodname
-    cmet = env->GetStringUTFChars(met, NULL);
-    string methodname = string(cmet);
-    
-    cdes = env->GetStringUTFChars(desc, NULL);
-    string methoddesc = string(cdes);
-
-    const char* cstaticcallee;
-    string strstaticcallee = "";
-    if (staticcallee) {
-      cstaticcallee = env->GetStringUTFChars(staticcallee, NULL);
-      strstaticcallee = string(cstaticcallee);
+    if (callee_tag == 0 && cp_callee.compare("")==0) {
+      callee_tag = g_objectid++;
+      g_jvmti->SetTag(callee,callee_tag);
     }
-
-
-    string staticcaller;
-
+    jlong caller_tag = 0;
+    string cp_caller;
     jvmtiFrameInfo *frame;
     g_jvmti->Allocate(3*sizeof(jvmtiFrameInfo),(unsigned char**)&frame);
     jint count;
     g_jvmti->GetStackTrace(thread,1,2,frame,&count);
     if (count > 1) {
-
       char *methodName2 = NULL;
       g_jvmti->GetMethodName(frame[1].method, &methodName2,NULL, NULL);
-
 
       jint access_flags = 0;
       g_jvmti->GetMethodModifiers(frame[1].method,&access_flags);
@@ -352,14 +298,14 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
   	  printf("errrrrrrror");
   	}
   	strcat(source_name,methodName2);
-  	staticcaller = source_name;
+  	cp_caller = source_name;
   	g_jvmti->Deallocate((unsigned char *)source_name);
       }
       else {
   	jobject callerobj = NULL;
   	jvmtiError error = g_jvmti->GetLocalObject(thread,2,0,&callerobj);
   	if (callerobj != NULL) {
-  	  error = g_jvmti->GetTag(callerobj,&tag_caller);
+  	  error = g_jvmti->GetTag(callerobj,&caller_tag);
   	  if (error != JVMTI_ERROR_NONE) {
   	    printf("errrrrrrror %d \n",error);
   	  }
@@ -386,31 +332,23 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
   	  g_jvmti->SetTag(current,g_objectid++);
   	  argtags[i] = g_objectid - 1;
   	  if (alloc) {
-  	    Allocation *event = new Allocation ("N/A",argtags[i],tag_caller,"-");
+  	    Allocation *event = new Allocation ("N/A",argtags[i],caller_tag,"-");
   	    eventlist.push_back(event);
   	  }
   	}
       }
     }
+
     if (methodEnter){
-      MethodCall *event = new MethodCall (methodname,
-  					  methoddesc,
-  					  strstaticcallee,
-  					  staticcaller,
-  					  tag_currentthis,
-  					  tag_caller,
+      MethodCall *event = new MethodCall (cp_name,
+  					  cp_desc,
+  					  cp_callee,
+  					  cp_caller,
+  					  callee_tag,
+  					  caller_tag,
   					  argtags,
   					  argcount);
-
       eventlist.push_back(event);
-    }
-
-    // Release Strings
-    env->ReleaseStringUTFChars(met, cmet);
-    env->ReleaseStringUTFChars(desc, cdes);
-
-    if (staticcallee) {
-      env->ReleaseStringUTFChars(staticcallee, cstaticcallee);
     }
   }exit_critical_section();
 }
@@ -418,8 +356,8 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
 
 /* 
    TODO:
-   * make use of toCPS() and get_tag()
-   * make shorter
+     * Move get caller part to a separate function
+     * Move get out of scope objs to a separate function
    */
 JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 (JNIEnv *env,
@@ -432,33 +370,19 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
  jobjectArray outOfScopes,
  jthread thread ) 
 {
-
   if (returns) {
     enter_critical_section(); {
-      jlong tag_callee = 0;
-      jlong tag_caller = 0;
-      jlong tag_returned = 0;
+      jlong returned_tag = get_tag(returned);
+      jlong callee_tag = get_tag(callee);
+      string cp_method = toCPS(env,met);
+      string cp_desc = toCPS(env,desc);
       string cp_staticcallee;
-      string cp_staticcaller;
-
-      // Get method/description from java strings
-      string method = toCPS(env,met);
-      string description = toCPS(env,desc);
-    
-      // Get returned object's tag
-      if (returned) {
-	g_jvmti->GetTag(returned, &tag_returned);
-      }
-
-      // Get Callee's tag
-      if (callee) {
-	g_jvmti->GetTag(callee, &tag_callee);
+      if (callee_tag == 0) {
+	cp_staticcallee = toCPS(env,staticcallee);
       }
       
-      // if tag was unavailable, Get callee's class
-      if (tag_callee == 0) {;
-	cp_staticcallee = toCPS(env, staticcallee);
-      }
+      string cp_staticcaller;
+      jlong caller_tag = 0;
 
       jvmtiFrameInfo *frame;
       g_jvmti->Allocate(3*sizeof(jvmtiFrameInfo),(unsigned char**)&frame);
@@ -466,7 +390,6 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
       jint count;
       g_jvmti->GetStackTrace(thread,1,2,frame,&count);
       if (count > 1) {
-
 	char *methodName2 = NULL;
 	g_jvmti->GetMethodName(frame[1].method, &methodName2,NULL, NULL);
 
@@ -494,7 +417,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 	  jobject callerobj = NULL;
 	  jvmtiError error = g_jvmti->GetLocalObject(thread,2,0,&callerobj);
 	  if (callerobj != NULL) {
-	    error = g_jvmti->GetTag(callerobj,&tag_caller);
+	    error = g_jvmti->GetTag(callerobj,&caller_tag);
 	    if (error != JVMTI_ERROR_NONE) {
 	      printf("errrrrrrror %d \n",error);
 	    }
@@ -518,24 +441,20 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 	  }
 	}
       }
-
-      Returned *event = new Returned(method,
-				     description,
+      Returned *event = new Returned(cp_method,
+				     cp_desc,
 				     cp_staticcallee,
 				     cp_staticcaller,
-				     tag_caller,
-				     tag_callee,
-				     tag_returned,
+				     caller_tag,
+				     callee_tag,
+				     returned_tag,
 				     outobjs,
 				     objcounter);
       eventlist.push_back(event);
-
-      g_jvmti->Deallocate((unsigned char*)frame);
-
     } exit_critical_section();
   }
-
 }
+
 
 
 /* 
@@ -552,17 +471,72 @@ JNIEXPORT void JNICALL Java_NativeInterface_newObj
 {
   enter_critical_section(); {
     jlong stored_tag = get_tag(stored);
-    if (stored_tag == 0) {
+    // if (stored_tag != 0) {
+    //   return;
+    // }
+    // else 
+      if (stored_tag == 0) {
       g_jvmti->SetTag(stored,g_objectid++);
       stored_tag = g_objectid - 1;
     }
-
+    
     if (alloc) {
       string type = toCPS(env,desc);
-      string caller_str = toCPS(env,staticcaller);
       jlong caller_tag = get_tag(caller);
+      string cp_staticcaller;
+      if (caller_tag == 0) {
+	cp_staticcaller = toCPS(env,staticcaller);
+      }
+      if (caller_tag == 0 && cp_staticcaller.compare("") == 0) {
+	jvmtiFrameInfo *frame;
+	g_jvmti->Allocate(3*sizeof(jvmtiFrameInfo),(unsigned char**)&frame);
 
-      Allocation *event = new Allocation (type,stored_tag,caller_tag,caller_str);
+	jint count;
+	g_jvmti->GetStackTrace(thread,1,2,frame,&count);
+	if (count > 1) {
+	  char *methodName2 = NULL;
+	  g_jvmti->GetMethodName(frame[0].method, &methodName2,NULL, NULL);
+
+
+	  jint access_flags = 0;
+	  g_jvmti->GetMethodModifiers(frame[0].method,&access_flags);
+	  //printf("calling met: %s access flags: %d \n",methodName2, access_flags);
+	  // flags == 9
+	  
+	  if (access_flags >= 8) {
+	    jclass declaring_class;
+	    char *source_name;
+	    jvmtiError error = g_jvmti->GetMethodDeclaringClass(frame[0].method,&declaring_class);
+	    if (error != JVMTI_ERROR_NONE) {
+	      printf("errrrrrrror");
+	    }
+	    error = g_jvmti->GetClassSignature(declaring_class,&source_name,NULL);
+	    if (error != JVMTI_ERROR_NONE) {
+	      printf("errrrrrrror");
+	    }
+	    strcat(source_name,methodName2);
+	    cp_staticcaller = source_name;
+	    g_jvmti->Deallocate((unsigned char *)source_name);
+	  }
+	  else {
+	    jobject callerobj = NULL;
+	    jvmtiError error = g_jvmti->GetLocalObject(thread,1,0,&callerobj);
+	    if (callerobj != NULL) {
+	      error = g_jvmti->GetTag(callerobj,&caller_tag);
+	      if (error != JVMTI_ERROR_NONE) {
+		printf("errrrrrrror %d \n",error);
+	      }
+	      if (caller_tag == 0) {
+		caller_tag = g_objectid++;
+		g_jvmti->SetTag(callerobj,caller_tag);
+	      }
+	    }
+	  }
+	}	
+      }
+      //cout << to_string(caller_tag) << " " << cp_staticcaller << endl;
+
+      Allocation *event = new Allocation (type,stored_tag,caller_tag,cp_staticcaller);
       eventlist.push_back(event);
     }
   }exit_critical_section();
@@ -574,7 +548,8 @@ JNIEXPORT void JNICALL Java_NativeInterface_newObj
 */
 void JNICALL
 cbObjectFree(jvmtiEnv *jvmti_env,
-	     jlong tag) {
+	     jlong tag) 
+{
   Deallocation *event = new Deallocation (tag);
   eventlist.push_back(event);
 }
@@ -607,10 +582,11 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
 {
   // Avoid transform of system classes
   enter_critical_section(); {
+
     if(!g_init || !loader) {
       return;
     }
-  }  exit_critical_section();
+
 
   // Avoid transform of instrument classes
   const char *result = strstr(name,"org/objectweb/asm/");
@@ -621,19 +597,22 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
      || strcmp(name,"Instrument") == 0) {
     return;
   }
-
-  enter_critical_section(); {
+    // printf("%s %d \n",name,class_data_len);
 
     jbyteArray barr = jni->NewByteArray(class_data_len);
+
     jni->SetByteArrayRegion(barr,0,class_data_len,(jbyte*)(class_data));
-    jbyteArray new_barr = NULL; 
-    new_barr = (jbyteArray) jni->CallStaticObjectMethod(g_cls,g_mid,barr);
+
+
+    jbyteArray new_barr = (jbyteArray) jni->CallStaticObjectMethod(g_cls,g_mid,barr);
+
+
 
     if (new_barr != NULL) {
 
       jint len = jni->GetArrayLength(new_barr);
 
-      //printf("%s new len: %d\n",name,len);
+      // printf("%s new len: %d\n",name,len);
       unsigned char *newclass;
       jvmtiError err = jvmti_env->Allocate(len,&newclass);
 
@@ -650,6 +629,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
     // cout << "Instrumented:";
     // printf("%s",name);
     // cout << endl;
+
   }exit_critical_section();
 }
 
@@ -689,7 +669,8 @@ VMInit(jvmtiEnv *jvmti_env,
 }
 
 
-void parse_options(char *options) {
+void parse_options(char *options) 
+{
   if (options != NULL) {
     // printf("options str = %s\n",options);
     char *test_test = strstr(options,"test");
@@ -798,7 +779,8 @@ Agent_OnLoad(JavaVM *vm,
    some test method.
 */
 JNIEXPORT void JNICALL 
-Agent_OnUnload(JavaVM *vm) {
+Agent_OnUnload(JavaVM *vm)
+{
   //printf("number of events %lu \n",eventlist.size());
   if (test) {
     test_fun(testnr,eventlist);

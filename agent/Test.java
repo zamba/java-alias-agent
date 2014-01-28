@@ -7,30 +7,45 @@ public class Test {
 
     public static void main(String[] args) {
 	
-	LinkedList<Integer> list = new LinkedList<Integer>();
+	
 
+	// list.add(2);
+	
 	Bar bar = new Bar();
-
-
-
-	int[] arr = new int[5];
-
-	Zolo[][] arr2 = new Zolo[3][5];
-
+	// bar.alloc();
 	bar.alloc();
 
-    }
 
+	// int[] arr = new int[5];
+
+	// Zolo[][] arr2 = new Zolo[3][5];
+
+	// bar.alloc();
+	// Zolo temp = bar.zolo;
+	// Yolo yolo = new Yolo(new Zolo());
+
+    }
 }
 
 
 class Bar {
-    void alloc() {
-	int[] arr = new int[5];
+    Zolo zolo;
+    int [] arr;
+    LinkedList<Integer> list = new LinkedList<Integer>();
 
-	Zolo[][] arr2 = new Zolo[3][5];
+    public Bar() {
+	// this.zolo = new Zolo();
+	// this.arr = new int[5];
+	list.add(2);
+    }
+    void alloc() {
+	this.arr = new int[5];
 	Zolo zolo = new Zolo();
-	LinkedList<Integer> list = new LinkedList<Integer>();
+	// int[] arr = new int[5];
+
+	// Zolo[][] arr2 = new Zolo[3][5];
+	// Zolo zolo = new Zolo();
+	// LinkedList<Integer> list = new LinkedList<Integer>();
     }
 }
 
@@ -39,4 +54,11 @@ class Bar {
 
 class Zolo {
 
+}
+
+class Yolo {
+    Zolo zolo;
+    public Yolo(Zolo zolo) {
+
+    }
 }

@@ -13,7 +13,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     private String des;
     private String klass;
     private int acc;
-    private boolean newobj = false;
+    private boolean newObj = false;
 
     private String currentNew = null;
 
@@ -30,22 +30,16 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	des = desc;
 	acc = access;
 	klass = owner;
-
 	isMetStatic = isStatic(access);
 
-	//System.out.println("Instrumenting: " + owner + " " + name + " "+ desc + " access: " + access + " is static=" + isMetStatic);
+	//System.out.println("Instrumenting: " + owner +
+	// " " + name + " "+ desc + " access: " + access +
+	//" is static=" + isMetStatic);
     }
 
     boolean isStatic(int access) {
 	return (access >= 8);
     }
-    
-/******************************************************************************/
-/* Can be used to track created variables?                                    */
-/******************************************************************************/
-
-
-
 
 /******************************************************************************/
 /* NEW NEWARRAY ANEWARRAY MULTIANEWARRAY                                      */
@@ -108,7 +102,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	    push((String)null);
 	}
 	else {
-	    loadThis();
+	    super.loadThis();
 	}
     }
 
@@ -117,13 +111,39 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	push(desc); // #1
 	swap();
 	insertThisOrStatic();
+	insertThreadAndNew();
+    }
 
-	mv.visitMethodInsn(INVOKESTATIC,
-			   "java/lang/Thread",
-			   "currentThread",
-			   "()Ljava/lang/Thread;"); // #5
+    // public void visitInsn(int opcode) {
+    // 	if (opcode == DUP && newObj) {
+    // 	    dup();
+    // 	    newObj = false;
+    // 	}
+    // 	super.visitInsn(opcode);
+    // }
 
-	mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","newObj",
+    public void visitTypeInsn(int opcode,
+			      String type) {
+	if (opcode == NEW) {
+	    currentNew = type;
+	    newObj = true;
+	}
+	mv.visitTypeInsn(opcode,type);
+	if (opcode == NEW) {
+	    //System.out.println("type : " + type);
+	    dup();
+	}
+	if (opcode == ANEWARRAY) {
+	    insertNewCode("[L"+type+";");
+	}
+    }
+
+    private void insertThreadAndNew() {
+	    mv.visitMethodInsn(INVOKESTATIC,
+	    		       "java/lang/Thread",
+	    		       "currentThread",
+	    		       "()Ljava/lang/Thread;"); //#5
+	    mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","newObj",
 			   "(Ljava/lang/String;" +    // desc            #1
 			   "Ljava/lang/Object;" +     // stored obj      #2
 			   "Ljava/lang/String;" +     // caller static   #3
@@ -131,16 +151,22 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 			   "Ljava/lang/Thread;)V");   // current thread  #5
     }
 
+    public void visitMethodInsn(int opcode,
+				String owner,
+				String name,
+				String desc) {
+	super.visitMethodInsn(opcode,owner,name,desc);
 
-
-    public void visitTypeInsn(int opcode,
-			      String type) {
-	if (opcode == NEW) {
-	    currentNew = type;
+	if (name.equals("<init>") && owner.equals(currentNew) && newObj) {
+	    // System.out.println("Met : " + owner + " " + name + " " + desc);
+	    newObj = false;
+	    push(owner); // #2
+	    swap();
+	    insertThisOrStatic(); // #3-4
+	    insertThreadAndNew();
 	}
-	mv.visitTypeInsn(opcode,type);
-	if (opcode == ANEWARRAY) {
-	    insertNewCode("[L"+type+";");
+	else {
+	    // System.out.println(opcode + " " + owner +  " " + name + " " + desc);
 	}
     }
 
@@ -175,7 +201,6 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 					int dims) {
 	mv.visitMultiANewArrayInsn(desc,dims);
 	insertNewCode(desc);
-    
     }
 
 
@@ -279,6 +304,37 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 /* store/load field                                                           */
 /******************************************************************************/
 
+
+    public void addThreadAndField(int n) {
+	mv.visitMethodInsn(INVOKESTATIC,
+			   "java/lang/Thread",
+			   "currentThread",
+			   "()Ljava/lang/Thread;"); //9
+	if (n == 1) {
+	    mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","storeField",
+			       "(Ljava/lang/Object;" +    // desc            #1
+			       "Ljava/lang/Object;" +     // stored obj      #2
+			       "Ljava/lang/Object;" +     // old value       #3
+			       "Ljava/lang/String;" +     // caller static   #4
+			       "Ljava/lang/String;" +     // caller static   #5
+			       "Ljava/lang/String;" +     // caller static   #6
+			       "Ljava/lang/String;" +     // caller object   #7
+			       "Ljava/lang/Object;" +     // caller object   #8
+			       "Ljava/lang/Thread;)V");   // current thread  #9
+	}
+	else if (n == 0) {
+	    mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","loadField",
+			       "(Ljava/lang/Object;" +    // desc            #1
+			       "Ljava/lang/Object;" +     // stored obj      #2
+			       "Ljava/lang/String;" +     // caller static   #3
+			       "Ljava/lang/String;" +     // caller static   #4
+			       "Ljava/lang/String;" +     // caller static   #5
+			       "Ljava/lang/String;" +     // caller object   #6
+			       "Ljava/lang/Object;" +     // caller object   #7
+			       "Ljava/lang/Thread;)V");   // current thread  #8
+	}
+    }
+
     /*
       Inserting methodcalls to callbacks
       GETSTATIC, PUTSTATIC, GETFIELD, PUTFIELD
@@ -292,76 +348,38 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 			       String owner,
 			       String name,
 			       String desc) {
-
 	if (opcode == PUTFIELD || opcode == GETFIELD || opcode == PUTSTATIC) {
 	    if (opcode == PUTFIELD) {
 		char c = desc.charAt(0);
-		//objref value
-		dup2(); //                           // #1 #2
-		//objref value objref value
-		
+		dup2();
 		if (c != 'L' && c != '[') {
-		    
 		    pop();
 		    push((String)null);
-		    //objref value objref null objref
 		}
-
 		dup2();
-		//objref value objref value objref value
-		
 		pop();
-		//objref value objref value objref
-		
-		
 		if(c == 'L' || c == '[') {
-
 		    super.visitFieldInsn(GETFIELD,owner,name,desc);
 		}
 		else {
-
 		    pop();
 		    push((String)null);
 		}
-
-		//objref value objref value value
-
 		push(owner);                         // #4
 		push(name);                          // #5
 		push(desc);                          // #6
 		insertThisOrStatic();
-		mv.visitMethodInsn(INVOKESTATIC,
-				   "java/lang/Thread",
-				   "currentThread",
-				   "()Ljava/lang/Thread;"); //9
-
-		mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","storeField",
-				   "(Ljava/lang/Object;" +    // desc            #1
-				   "Ljava/lang/Object;" +     // stored obj      #2
-				   "Ljava/lang/Object;" +     // old value       #3
-				   "Ljava/lang/String;" +     // caller static   #4
-				   "Ljava/lang/String;" +     // caller static   #5
-				   "Ljava/lang/String;" +     // caller static   #6
-				   "Ljava/lang/String;" +     // caller object   #7
-				   "Ljava/lang/Object;" +     // caller object   #8
-				   "Ljava/lang/Thread;)V");   // current thread  #9
+		addThreadAndField(1);
 	    }
 	    else if (opcode == PUTSTATIC) {
-		
-		// value
 		dup();                                        // #1
-		// value value
 		push((String)null);                           // #2
-		// value value null
 		swap();
-		// value null value
 		char cd = desc.charAt(0);
 		if (cd != 'L' && cd != '[') {
 		    pop();
 		    push((String)null);
 		}
-
-
 		char c = desc.charAt(0);
 		if(c == 'L' || c == '[') {
 		    super.visitFieldInsn(GETSTATIC,owner,name,desc);
@@ -369,114 +387,43 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 		else {
 		    push((String)null);
 		}
-
-		
-		// value null value value
 		push(owner);                         // #4
 		push(name);                          // #5
 		push(desc);                          // #6
-		// value null value value owner name desc
 		insertThisOrStatic();
-		// value null value value owner name desc (null or klass.met) (null or currentthis)
-
-		mv.visitMethodInsn(INVOKESTATIC,
-				   "java/lang/Thread",
-				   "currentThread",
-				   "()Ljava/lang/Thread;"); //9
-
-		mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","storeField",
-				   "(Ljava/lang/Object;" +    // objref          #1
-				   "Ljava/lang/Object;" +     // stored obj      #2
-				   "Ljava/lang/Object;" +     // old value       #3
-				   "Ljava/lang/String;" +     // caller static   #4
-				   "Ljava/lang/String;" +     // caller static   #5
-				   "Ljava/lang/String;" +     // caller static   #6
-				   "Ljava/lang/String;" +     // caller object   #7
-				   "Ljava/lang/Object;" +     // caller object   #8
-				   "Ljava/lang/Thread;)V");   // current thread  #9
-		
-		
+		addThreadAndField(1);
 	    }
 	    else if (opcode == GETFIELD) {
 		//objref
 		dup(); 
 		//objref objref
 	    }
-	    
 	}
-
 	super.visitFieldInsn(opcode,owner,name,desc);
-
 	if (opcode == GETFIELD) {
-	    //objref value
 	    dupX1();
-	    //value objref value
 	    push(owner);
 	    push(name);
 	    push(desc);
 	    insertThisOrStatic();
-
-	mv.visitMethodInsn(INVOKESTATIC,
-			   "java/lang/Thread",
-			   "currentThread",
-			   "()Ljava/lang/Thread;"); //7
-
-	mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","loadField",
-			       "(Ljava/lang/Object;" +    // desc            #1
-			       "Ljava/lang/Object;" +     // stored obj      #2
-			       "Ljava/lang/String;" +     // caller static   #3
-			       "Ljava/lang/String;" +     // caller static   #4
-			       "Ljava/lang/String;" +     // caller static   #5
-			       "Ljava/lang/String;" +     // caller object   #6
-			       "Ljava/lang/Object;" +     // caller object   #7
-			       "Ljava/lang/Thread;)V");   // current thread  #8
+	    addThreadAndField(0);
 	}
 	else if (opcode == GETSTATIC) {
 	    dup();
 	    push((String)null);
 	    swap();
-	    //value | null value
 	    push(owner);
 	    push(name);
 	    push(desc);
 	    insertThisOrStatic();
-
-	    
-	    mv.visitMethodInsn(INVOKESTATIC,
-			       "java/lang/Thread",
-			       "currentThread",
-			       "()Ljava/lang/Thread;"); //8
-
-	    mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","loadField",
-			       "(Ljava/lang/Object;" +    // desc            #1
-			       "Ljava/lang/Object;" +     // stored obj      #2
-			       "Ljava/lang/String;" +     // caller static   #3
-			       "Ljava/lang/String;" +     // caller static   #4
-			       "Ljava/lang/String;" +     // caller static   #5
-			       "Ljava/lang/String;" +     // caller object   #6
-			       "Ljava/lang/Object;" +     // caller object   #7
-			       "Ljava/lang/Thread;)V");   // current thread  #8
+	    addThreadAndField(0);
 	}
     }
-@Override
-public void visitLocalVariable(String name,
-			       String desc,
-			       String signature,
-			       Label start,
-			       Label end,
-			       int index) {
-    System.out.println("new var" + name + desc + signature);
-    super.visitLocalVariable(name,desc,signature,start,end,index);
-}
-
 
 
 /******************************************************************************/
 /* onMethodEnter onMethodExit visitMaxs                                       */
 /******************************************************************************/
-
-
-
 
     private void loadListSize() {
 	super.visitVarInsn(ALOAD,listIndex);
@@ -487,9 +434,7 @@ public void visitLocalVariable(String name,
     }
 
     @Override protected void onMethodExit(int opcode) {
-	
-	//ref
-	
+
 	if (opcode == ATHROW)
 	    return;
 
@@ -567,8 +512,6 @@ public void visitLocalVariable(String name,
 	// super.visitLabel(elser);
 
 
-
-
 	if (l.size() > 0 && opcode != ATHROW && false) {
 	    mv.visitIntInsn(BIPUSH,l.size());
 	    mv.visitTypeInsn(ANEWARRAY,"Ljava/lang/Object;"); // #6
@@ -604,36 +547,6 @@ public void visitLocalVariable(String name,
     }
 
 
-    public void visitMethodInsn(int opcode,
-				String owner,
-				String name,
-				String desc) {
-	if (name.equals("<init>") && owner.equals(currentNew)) {
-	    dup(); // #2
-	}
-	super.visitMethodInsn(opcode,owner,name,desc);
-
-
-	if (name.equals("<init>") && owner.equals(currentNew)) {
-	    push(owner); // #1
-	    swap();
-	    insertThisOrStatic(); // #3-4
-	    mv.visitMethodInsn(INVOKESTATIC,
-	    		       "java/lang/Thread",
-	    		       "currentThread",
-	    		       "()Ljava/lang/Thread;"); //#5
-
-
-	    mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","newObj",
-			   "(Ljava/lang/String;" +    // desc            #1
-			   "Ljava/lang/Object;" +     // stored obj      #2
-			   "Ljava/lang/String;" +     // caller static   #3
-			   "Ljava/lang/Object;" +     // caller object   #4
-			   "Ljava/lang/Thread;)V");   // current thread  #5
-	    
-	}
-
-    }
 
     /*
       Adds bytecode containing methods calls to native callback with:
@@ -649,27 +562,13 @@ public void visitLocalVariable(String name,
 	if (met.equals("<clinit>")) {
 	    return;
 	}
-
-	// if (met.equals("<init>")) {
-	//     push(klass);//#1
-	//     loadThis();//#2
-	//     visitInsn(ACONST_NULL);//#3
-	//     visitInsn(ACONST_NULL);//#4
-	//     mv.visitMethodInsn(INVOKESTATIC,
-	//     		       "java/lang/Thread",
-	//     		       "currentThread",
-	//     		       "()Ljava/lang/Thread;"); //#5
-
-
-	// mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","newObj",
-	// 		   "(Ljava/lang/String;" +    // desc            #1
-	// 		   "Ljava/lang/Object;" +     // stored obj      #2
-	// 		   "Ljava/lang/String;" +     // caller static   #3
-	// 		   "Ljava/lang/Object;" +     // caller object   #4
-	// 		   "Ljava/lang/Thread;)V");   // current thread  #5
-	// }
-
-
+	if (met.equals("<init")) {
+	    push(des);
+	    loadThis();
+	    push((String) null);
+	    push((String) null);
+	    insertThreadAndNew(); 
+	}
 	// super.visitTypeInsn(NEW,"Ljava/util/LinkedList;");
 	// listIndex = newLocal(Type.getType("Ljava/util/LinkedList;"));
 	// dup();
@@ -679,7 +578,6 @@ public void visitLocalVariable(String name,
 	// 		      "()V");
 	// super.visitVarInsn(ASTORE,listIndex);
 
-
     	int parametersCounter = countParameters();
     	int[] parameters;
 
@@ -687,8 +585,7 @@ public void visitLocalVariable(String name,
 	mv.visitLdcInsn(des);          // #2
 	insertThisOrStatic();
 	//System.out.println("met enter: " + met + " " + des + " parCounter" + parametersCounter);
-	if (parametersCounter > 0) {
-	    
+	if (parametersCounter > 0 && false) {
 	    parameters = new int[parametersCounter];
 	    fillParameters(parameters);
 	    
