@@ -14,11 +14,11 @@ using namespace std;
 
 // set variables will be recorded
 bool alloc=true;
-bool methodEnter=false;
-bool getField = false;
-bool storeField = false;
-bool returns = false;
-bool storeVar = false;
+bool methodEnter=true;
+bool getField = true;
+bool storeField = true;
+bool returns = true;
+bool storeVar = true;
 
 bool test = false;
 int testnr = 0;
