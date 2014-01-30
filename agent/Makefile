@@ -4,7 +4,7 @@ ifeq ($(UNAME),Linux)
 	CC = g++
 	temp = $(shell which javac)
 	INCLUDE = $(subst bin/javac,include,$(temp))
-	IFLAGS = -I /usr/local/java/jdk1.7.0_45/include/linux -I /usr/local/java/jdk1.7.0_45/include
+	IFLAGS = -I $(INCLUDE) -I $(INCLUDE)/linux
 endif
 
 ifeq ($(UNAME),Darwin)
