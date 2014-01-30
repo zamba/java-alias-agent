@@ -4,7 +4,7 @@ ifeq ($(UNAME),Linux)
 	CC = g++
 	temp = $(shell which javac)
 	INCLUDE = $(subst bin/javac,include,$(temp))
-	IFLAGS = -I /usr/local/java/jdk1.7.0_45/include/linux -I /usr/local/java/jdk1.7.0_45/include
+	IFLAGS = -I $(INCLUDE) -I $(INCLUDE)/linux
 endif
 
 ifeq ($(UNAME),Darwin)
@@ -18,7 +18,7 @@ all:
 	javac  *.java
 	javah NativeInterface
 	$(CC) -std=c++11 -o ninja ninja.cpp
-	$(CC) -c -fPIC -std=c++11 $(IFLAGS) alias.cpp eventlist.cpp test.cpp
+	$(CC) -c -fPIC -std=c+x+11 $(IFLAGS) alias.cpp eventlist.cpp test.cpp
 	$(CC) -shared -o testagent.so alias.o eventlist.o test.o
 
 test:

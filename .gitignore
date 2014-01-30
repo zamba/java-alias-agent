@@ -28,3 +28,6 @@ ninja
 alias/ninja
 output
 alias/output
+
+Makefile
+makefile
