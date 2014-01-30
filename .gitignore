@@ -25,9 +25,13 @@
 
 
 ninja
-alias/ninja
+agent/ninja
 output
-alias/output
+agent/output
 
 Makefile
 makefile
+agent/Makefile
+agent/makefile
+
+*~
