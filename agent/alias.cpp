@@ -28,7 +28,7 @@ const char *segment = "/home/erik/java-alias-agent/agent";
 
 // export method = 0 print recorded info to STDOUT
 //                 1 write recorded info to filename
-int export_method = 0;
+int export_method = 1;
 const char *filename = "output";
 
 
@@ -297,9 +297,13 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
   	if (error != JVMTI_ERROR_NONE) {
   	  printf("errrrrrrror");
   	}
-  	strcat(source_name,methodName2);
-  	cp_caller = source_name;
-  	g_jvmti->Deallocate((unsigned char *)source_name);
+  	//strcat(source_name,methodName2);
+	cp_caller = source_name;
+	cp_caller.append(methodName2);
+  	//cp_caller = source_name;
+	if (source_name) {
+	  g_jvmti->Deallocate((unsigned char *)source_name);
+	}
       }
       else {
   	jobject callerobj = NULL;
@@ -409,9 +413,13 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 	  if (error != JVMTI_ERROR_NONE) {
 	    printf("errrrrrrror");
 	  }
-	  strcat(source_name,methodName2);
+	  //strcat(source_name,methodName2);
 	  cp_staticcaller = source_name;
-	  g_jvmti->Deallocate((unsigned char *)source_name);
+	  cp_staticcaller.append(methodName2);
+	  //cp_staticcallercaller = source_name;
+	  if (source_name) {
+	    g_jvmti->Deallocate((unsigned char *)source_name);
+	  }
 	}
 	else {
 	  jobject callerobj = NULL;
@@ -475,10 +483,10 @@ JNIEXPORT void JNICALL Java_NativeInterface_newObj
     //   return;
     // }
     // else 
-      if (stored_tag == 0) {
-      g_jvmti->SetTag(stored,g_objectid++);
-      stored_tag = g_objectid - 1;
-    }
+      if (stored_tag == 0 && stored != NULL) {
+	g_jvmti->SetTag(stored,g_objectid++);
+	stored_tag = g_objectid - 1;
+      }
     
     if (alloc) {
       string type = toCPS(env,desc);
@@ -514,9 +522,13 @@ JNIEXPORT void JNICALL Java_NativeInterface_newObj
 	    if (error != JVMTI_ERROR_NONE) {
 	      printf("errrrrrrror");
 	    }
-	    strcat(source_name,methodName2);
+	    //strcat(source_name,methodName2);
 	    cp_staticcaller = source_name;
-	    g_jvmti->Deallocate((unsigned char *)source_name);
+	    cp_staticcaller.append(methodName2);
+	    //cp_staticcallercaller = source_name;
+	    if (source_name) {
+	      g_jvmti->Deallocate((unsigned char *)source_name);
+	    }
 	  }
 	  else {
 	    jobject callerobj = NULL;
@@ -580,6 +592,9 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
 		  jint* new_class_data_len,
 		  unsigned char** new_class_data) 
 {
+  // printf("not instrumenting: %s \n",name);
+  // return;
+
   // Avoid transform of system classes
   enter_critical_section(); {
 
@@ -788,10 +803,10 @@ Agent_OnUnload(JavaVM *vm)
   }
   if (eventlist.size() > 0) {
     if (export_method == 0) {
-      cout  << endl << "printing eventlist" << endl << endl;
+      cout  << endl << "printing " << to_string(eventlist.size()) << " events" << endl << endl;
     }
     else if (export_method == 1) {
-      cout  << endl <<"exporting eventlist to file: " << filename << endl << endl;
+      cout  << endl <<"exporting " << to_string(eventlist.size()) << " events to file: " << filename << endl << endl;
     }
     printList(eventlist,export_method,filename);
   }

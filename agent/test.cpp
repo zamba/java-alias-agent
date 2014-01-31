@@ -4,8 +4,15 @@
 
 using namespace std;
 
-bool test_allocation(list<Event *> events)
+bool test_allocation(list<Event *> list)
 {
+  int nr = 0;
+    for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
+      if ((*it)->getType() == 1)
+	nr++;
+    }
+    if (nr == 6)
+      return true;
   return false;
 }
 
@@ -13,37 +20,61 @@ bool test_allocation(list<Event *> events)
 /* Field tests                                                                */
 /******************************************************************************/
 
-bool field_store(list<Event *> events)
+bool field_store(list<Event *> list)
 {
+  int nr = 0;
+    for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
+      if ((*it)->getType() == 3)
+	nr++;
+    }
+    if (nr == 5)
+      return true;
   return false;
 }
 
-bool field_load(list<Event *> events)
+bool field_load(list<Event *> list)
 {
+  int nr = 0;
+    for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
+      if ((*it)->getType() == 2)
+	nr++;
+    }
+    if (nr == 5)
+      return true;
   return false;
 }
 
-bool field_overwrite(list<Event *> events)
-{
-  return false;
-}
 
 /******************************************************************************/
 /* Method tests                                                               */
 /******************************************************************************/
 
-bool method_call(list<Event *> events)
+bool method_call(list<Event *> list)
 {
+  int nr = 0;
+    for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
+      if ((*it)->getType() == 4)
+	nr++;
+    }
+
+    if (nr == 12)
+      return true;
+
   return false;
 }
 
-bool passed(list<Event *> events)
-{
-  return false;
-}
 
-bool returned(list<Event *> events)
+bool returned(list<Event *> list)
 {
+  int nr = 0;
+    for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
+      if ((*it)->getType() == 7)
+	nr++;
+    }
+
+    if (nr == 12)
+      return true;
+
   return false;
 }
 
@@ -51,67 +82,57 @@ bool returned(list<Event *> events)
 /* Variable tests                                                             */
 /******************************************************************************/
 
-bool variable_store(list<Event *> events)
+bool variable_store(list<Event *> list)
 {
+  int nr = 0;
+    for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
+      if ((*it)->getType() == 9)
+	nr++;
+    }
+    if (nr == 4)
+      return true;
   return false;
 }
-
-bool variable_scope(list<Event *> events)
-{
-  return false;
-}
-
-bool variable_overwrite(list<Event *> events)
-{
-  return false;
-}
-
-
 
 
 
 
 void test_fun(int test,list<Event *> events)
 {
-  bool result;
+  bool result = false;
+  string k;
   switch (test) 
     {
     case 1:
       result = test_allocation(events);
+      k = "allocation";
       break;
     case 2:
       result = field_store(events);
+      k = "fieldstore";
       break;
     case 3:
       result = field_load(events);
+      k = "fieldload";
       break;
     case 4:
-      result = field_overwrite(events);
-      break;
-
-    case 5:
       result = method_call(events);
+      k = "methodenter";
+      break;
+    case 5:
+      result = returned(events);
+      k = "methodexit";
       break;
     case 6:
-      result = passed(events);
-      break;
-    case 7:
-      result = returned(events);
+      result = variable_store(events);
+      k = "varstore";
       break;
 
-    case 8:
-      result = variable_store(events);
-      break;
-    case 9:
-      result = variable_scope(events);
-      break;
-    case 10:
-      result = variable_overwrite(events);
-      break;
     default:
       return;
     }
   string passed = "Passed";
   string failed = "Failed";
-  cout << "Test nr: " << to_string(test)  << (result ? passed : failed) << endl; 
+
+  cout << "Test nr(" << k  << "): \t" << to_string(test) << " "  << (result ? passed : failed) << endl; 
 }

@@ -15,31 +15,38 @@ endif
 
 
 all:
-	javac  *.java
-	javah NativeInterface
-	$(CC) -std=c++11 -o ninja ninja.cpp
-	$(CC) -c -fPIC -std=c++11 $(IFLAGS) alias.cpp eventlist.cpp test.cpp
-	$(CC) -shared -o testagent.so alias.o eventlist.o test.o
+	@javac  *.java
+	@javah NativeInterface
+	@$(CC) -std=c++11 -o ninja ninja.cpp
+	@$(CC) -c -fPIC -std=c++11 $(IFLAGS) alias.cpp eventlist.cpp test.cpp
+	@$(CC) -shared -o testagent.so alias.o eventlist.o test.o
 
 test:
-	java -agentpath:./testagent.so=test,1 test/Allocation
-	java -agentpath:./testagent.so=test,13 test/Allocation
+	@javac test/*.java
+	@java -agentpath:./testagent.so=test,1 test/Allocation
+	@java -agentpath:./testagent.so=test,2 test/FieldStore
+	@java -agentpath:./testagent.so=test,3 test/FieldLoad
+	@java -agentpath:./testagent.so=test,4 test/MethodEnter
+	@java -agentpath:./testagent.so=test,5 test/MethodExit
+	@java -agentpath:./testagent.so=test,6 test/VarStore
 
 jartest:
-	jar cvfe jartest.jar Test Test.class Foo.class Bar.class
-	java  -agentpath:./testagent.so -jar jartest.jar
+	@jar cvfe jartest.jar Test Test.class Foo.class Bar.class
+	@java  -agentpath:./testagent.so -jar jartest.jar
 
 bench:
-	java -agentpath:./testagent.so -jar ~/Desktop/dacapo-9.12-bach.jar batik        
+	java -agentpath:./testagent.so -jar ~/Desktop/dacapo-9.12-bach.jar batik       
 
 clean:
-	rm -f *.class
-	rm -f *.o
-	rm -f *.so
-	rm -f *~
-	rm -f output
-	rm -f ninja
-	rm -f *.log
-	rm -f jartest.jar
+	@rm -f *.class
+	@rm -f test/*.class
+	@rm -f test/*~	
+	@rm -f *.o
+	@rm -f *.so
+	@rm -f *~
+	@rm -f output
+	@rm -f ninja
+	@rm -f *.log
+	@rm -f jartest.jar
 
 .PHONY: clean test bench

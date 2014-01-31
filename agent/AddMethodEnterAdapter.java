@@ -13,9 +13,9 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     private String des;
     private String klass;
     private int acc;
-    private boolean newObj = false;
+    private int newObj = 0;
 
-    private String currentNew = null;
+    private String[] currentArr = null;
 
     int listIndex;
     
@@ -32,9 +32,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	klass = owner;
 	isMetStatic = isStatic(access);
 
-	//System.out.println("Instrumenting: " + owner +
-	// " " + name + " "+ desc + " access: " + access +
-	//" is static=" + isMetStatic);
+
     }
 
     boolean isStatic(int access) {
@@ -45,50 +43,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 /* NEW NEWARRAY ANEWARRAY MULTIANEWARRAY                                      */
 /******************************************************************************/
 
-//     Object[] currentLocals;
 
-// public void visitFrame(int type,
-// 		       int nLocal,
-// 		       Object[] local,
-// 		       int nStack,
-// 		       Object[] stack) {
-
-//     // System.out.println(met + type + " " + nLocal + " " + nStack);
-//     // System.out.println("Opcodes.Double=" + Opcodes.DOUBLE);
-//     // System.out.println("Opcodes.INTEGER=" + Opcodes.INTEGER);
-//     // System.out.println(UNINITIALIZED_THIS);
-//     // System.out.println(NULL);   
-//     // for (int i = 0; i < nLocal;i++){
-
-//     // 	System.out.println("\t local "+ local[i]); 
-//     // }
-//     // for (int i = 0; i < nStack;i++){
-
-//     // 	System.out.println("\t stack "+ stack[i]); 
-//     // }
-//     currentLocals = local;
-//     super.visitFrame(type,nLocal,local,nStack,stack);
-// }
-
-//     public void visitLabel(Label label) {
-// 	if (met.equals("main"))
-// 	    super.visitLabel(label);
-// 	System.out.println("Visits: "+ label);
-//     }
-
-
-
-// public void visitTryCatchBlock(Label start,
-// 			       Label end,
-// 			       Label handler,
-// 			       String type) {
-//     System.out.println(start + " " + end + " " + handler + " " + type);
-
-//     super.visitTryCatchBlock(start,
-// 			     end,
-// 			     handler,
-// 			     type);
-// }
 
     public void insertThisOrStatic() {
 	if (isMetStatic) {
@@ -106,31 +61,46 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	}
     }
 
+    private void insertThreadAndNew() {
+	    mv.visitMethodInsn(INVOKESTATIC,
+	    		       "java/lang/Thread",
+	    		       "currentThread",
+	    		       "()Ljava/lang/Thread;");
+	    mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","newObj",
+			   "(Ljava/lang/String;" +
+			   "Ljava/lang/Object;" + 
+			   "Ljava/lang/String;" +
+			   "Ljava/lang/Object;" + 
+			   "Ljava/lang/Thread;)V");
+    }
+
     public void insertNewCode(String desc) {
-	dup(); // #2
-	push(desc); // #1
+	dup();
+	push(desc);
 	swap();
 	insertThisOrStatic();
 	insertThreadAndNew();
     }
 
-    // public void visitInsn(int opcode) {
-    // 	if (opcode == DUP && newObj) {
-    // 	    dup();
-    // 	    newObj = false;
-    // 	}
-    // 	super.visitInsn(opcode);
-    // }
+
+
+
 
     public void visitTypeInsn(int opcode,
 			      String type) {
 	if (opcode == NEW) {
-	    currentNew = type;
-	    newObj = true;
+	    newObj++;
+	    if (currentArr != null) {
+		currentArr = Arrays.copyOf(currentArr,currentArr.length+1);
+		currentArr[currentArr.length-1] = type;
+	    }
+	    else {
+		currentArr = new String[1];
+		currentArr[0] = type;
+	    }
 	}
 	mv.visitTypeInsn(opcode,type);
 	if (opcode == NEW) {
-	    //System.out.println("type : " + type);
 	    dup();
 	}
 	if (opcode == ANEWARRAY) {
@@ -138,35 +108,28 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	}
     }
 
-    private void insertThreadAndNew() {
-	    mv.visitMethodInsn(INVOKESTATIC,
-	    		       "java/lang/Thread",
-	    		       "currentThread",
-	    		       "()Ljava/lang/Thread;"); //#5
-	    mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","newObj",
-			   "(Ljava/lang/String;" +    // desc            #1
-			   "Ljava/lang/Object;" +     // stored obj      #2
-			   "Ljava/lang/String;" +     // caller static   #3
-			   "Ljava/lang/Object;" +     // caller object   #4
-			   "Ljava/lang/Thread;)V");   // current thread  #5
-    }
-
     public void visitMethodInsn(int opcode,
 				String owner,
 				String name,
 				String desc) {
-	super.visitMethodInsn(opcode,owner,name,desc);
 
-	if (name.equals("<init>") && owner.equals(currentNew) && newObj) {
-	    // System.out.println("Met : " + owner + " " + name + " " + desc);
-	    newObj = false;
-	    push(owner); // #2
+
+	super.visitMethodInsn(opcode,owner,name,desc);
+	// if (name.equals("<init>") && newObj > 0) {
+	//     System.out.println("INIT : " + owner + " " + name + " " + desc);
+	// }
+	if (name.equals("<init>")  &&
+	    currentArr != null &&
+	    newObj > 0 &&
+	    owner.equals(currentArr[newObj-1])) {
+
+	    newObj--;
+	    currentArr = Arrays.copyOf(currentArr,currentArr.length-1);
+
+	    push(owner);
 	    swap();
-	    insertThisOrStatic(); // #3-4
+	    insertThisOrStatic();
 	    insertThreadAndNew();
-	}
-	else {
-	    // System.out.println(opcode + " " + owner +  " " + name + " " + desc);
 	}
     }
 
@@ -231,38 +194,9 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
      */
     @Override public void visitVarInsn(int opcode,
 				       int var) {
+	//boolean isNewVar = addASTORE(var);
+
 	if (opcode == ASTORE) {
-	    // Label elseLabel = new Label();
-	    // Label endLabel = new Label();
-
-	    // push(var);
-	    // super.visitVarInsn(ALOAD,listIndex);
-	    // super.visitMethodInsn(INVOKESTATIC,
-	    // 			  "LNativeInterface;",
-	    // 			  "exists",
-	    // 			  "(ILjava/util/LinkedList;)I");
-
-
-	    // super.visitJumpInsn(IFEQ,elseLabel);
-
-	    // super.visitVarInsn(ALOAD,listIndex);
-	    // push(var);
-	    // super.visitMethodInsn(INVOKESTATIC,
-	    // 			  "Ljava/lang/Integer;",
-	    // 			  "valueOf",
-	    // 			  "(I)Ljava/lang/Integer;");  
-	    // super.visitMethodInsn(INVOKEVIRTUAL,
-	    // 			  "Ljava/util/LinkedList;",
-	    // 			  "add",
-	    // 			  "(Ljava/lang/Object;)Z");
-	    // pop();
-	    // super.visitJumpInsn(GOTO,endLabel);
-
-	    // super.visitLabel(elseLabel);
-
-
-	    // super.visitLabel(endLabel);
-
 
 	    boolean isNewVar = addASTORE(var);
 	    // result is true if this was the first ASTORE to var
@@ -345,79 +279,128 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
          rewrite this method to make it more readable
     */
     public void visitFieldInsn(int opcode,
-			       String owner,
-			       String name,
-			       String desc) {
-	if (opcode == PUTFIELD || opcode == GETFIELD || opcode == PUTSTATIC) {
-	    if (opcode == PUTFIELD) {
-		char c = desc.charAt(0);
-		dup2();
-		if (c != 'L' && c != '[') {
-		    pop();
-		    push((String)null);
-		}
-		dup2();
-		pop();
-		if(c == 'L' || c == '[') {
-		    super.visitFieldInsn(GETFIELD,owner,name,desc);
-		}
-		else {
-		    pop();
-		    push((String)null);
-		}
-		push(owner);                         // #4
-		push(name);                          // #5
-		push(desc);                          // #6
-		insertThisOrStatic();
-		addThreadAndField(1);
-	    }
-	    else if (opcode == PUTSTATIC) {
-		dup();                                        // #1
-		push((String)null);                           // #2
-		swap();
-		char cd = desc.charAt(0);
-		if (cd != 'L' && cd != '[') {
-		    pop();
-		    push((String)null);
-		}
-		char c = desc.charAt(0);
-		if(c == 'L' || c == '[') {
-		    super.visitFieldInsn(GETSTATIC,owner,name,desc);
-		}
-		else {
-		    push((String)null);
-		}
-		push(owner);                         // #4
-		push(name);                          // #5
-		push(desc);                          // #6
-		insertThisOrStatic();
-		addThreadAndField(1);
-	    }
-	    else if (opcode == GETFIELD) {
-		//objref
-		dup(); 
-		//objref objref
-	    }
-	}
-	super.visitFieldInsn(opcode,owner,name,desc);
-	if (opcode == GETFIELD) {
-	    dupX1();
-	    push(owner);
-	    push(name);
-	    push(desc);
-	    insertThisOrStatic();
-	    addThreadAndField(0);
-	}
-	else if (opcode == GETSTATIC) {
-	    dup();
-	    push((String)null);
-	    swap();
-	    push(owner);
-	    push(name);
-	    push(desc);
-	    insertThisOrStatic();
-	    addThreadAndField(0);
-	}
+    			       String owner,
+    			       String name,
+    			       String desc) {
+
+    	char fc = desc.charAt(0);
+
+    	if (opcode == PUTFIELD || opcode == GETFIELD || opcode == PUTSTATIC) {
+    	    if (opcode == PUTFIELD) {
+    		//stack objref value
+
+    		// value is object or array
+    		if (fc == 'L' || fc == '[') {
+    		    dup2(); // #1,2 callee value
+    		}
+    		// value is long or double
+    		else if (fc == 'J' || fc == 'D') {
+    		    dup2X1();
+    		    pop2();
+    		    push((String)null);
+    		}
+    		// value is primitive
+    		else {
+    		    dup2();
+    		    pop();
+    		    push((String)null);		  
+    		}
+
+    		//stack objref value objref (obj/arr/null)
+
+    		if(fc == 'L' || fc == '[') {
+    		    dup2();
+    		    //stack objref value objref (obj/arr/null) objref (obj/arr/null)
+    		    pop();
+    		    //stack objref value objref (obj/arr/null) objref
+    		    super.visitFieldInsn(GETFIELD,owner,name,desc);
+    		    //stack objref value objref (obj/arr/null) oldvalue
+    		}
+    		else {
+    		    push((String)null);
+    		}
+    		//stack objref value objref (obj/arr/null) (oldvalue/null)
+    		push(owner);                         // #4
+    		push(name);                          // #5
+    		push(desc);                          // #6
+    		insertThisOrStatic();
+    		addThreadAndField(1);
+    	    }
+    	    else if (opcode == PUTSTATIC) {
+    		if (fc == 'L' || fc == '[') {
+    		    dup(); // #1,2 callee value
+    		}
+    		else {
+    		    push((String)null);
+    		}
+    		push((String)null);
+    		swap();
+
+    		if(fc == 'L' || fc == '[') {
+    		    super.visitFieldInsn(GETSTATIC,owner,name,desc);
+    		}
+    		else {
+    		    push((String)null);
+    		}
+
+    		push(owner);                         // #4
+    		push(name);                          // #5
+    		push(desc);                          // #6
+    		insertThisOrStatic();                // #7-8
+    		addThreadAndField(1);                // # 9
+    	    }
+    	    else if (opcode == GETFIELD) {
+    		//objref
+    		dup();
+    		//objref objref
+    	    }
+    	}
+    	super.visitFieldInsn(opcode,owner,name,desc);
+    	//getfield objref -> value
+    	if (opcode == GETFIELD) {
+    	    //objref value
+
+    	    if (fc == 'L' || fc == '[') {
+    		dupX1();
+    		//value objref value
+    	    }
+    	    // value is long or double
+    	    else if (fc == 'J' || fc == 'D') {
+    		dup2X1();
+    		//value objref value
+    		pop2();
+    		//value objref
+    		push((String)null);
+    		//value objref null
+    	    }
+    	    // value is primitive
+    	    else {
+    		dupX1();
+    		pop();
+    		push((String) null);
+    		//value objref null
+    	    }
+    	    push(owner);
+    	    push(name);
+    	    push(desc);
+    	    insertThisOrStatic();
+    	    addThreadAndField(0);
+	    
+    	}
+    	else if (opcode == GETSTATIC) {
+    	    push((String)null);
+    	    if (fc == 'L' || fc == '[') {
+    		dup();
+    	    }
+    	    else {
+    		push((String)null);		
+    	    }
+    	    push(owner);
+    	    push(name);
+    	    push(desc);
+    	    insertThisOrStatic();
+    	    addThreadAndField(0);
+    	}
     }
 
 
@@ -425,18 +408,13 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 /* onMethodEnter onMethodExit visitMaxs                                       */
 /******************************************************************************/
 
-    private void loadListSize() {
-	super.visitVarInsn(ALOAD,listIndex);
-	super.visitMethodInsn(INVOKEVIRTUAL,
-			      "Ljava/util/LinkedList;",
-			      "size",
-			      "()I");	
-    }
 
     @Override protected void onMethodExit(int opcode) {
 
-	if (opcode == ATHROW)
+	if (opcode == ATHROW) {
+	    
 	    return;
+	}
 
 	if (opcode == ARETURN) {
 	    dup();// #1
@@ -451,68 +429,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	insertThisOrStatic(); // #4,5
 
 
-	// int counter = 0;
-	// if (currentLocals != null) {
-	//     for (int i = 0; i < currentLocals.length;i++) {
-	// 	System.out.println(currentLocals[i]);
-	// 	if 
-	// 	counter++;
-	//     }
-	// }
-
-	// PROBLEMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
-	// --------------------------------------
-
-	// Label elser = new Label();
-
-	// Label startLabel = new Label();
-	// Label endLabel = new Label();
-
-	// loadListSize();
-	// visitJumpInsn(IFLE,elser);
-
-	// loadListSize();
-	// mv.visitTypeInsn(ANEWARRAY,"Ljava/lang/Object;");
-
-	// int ind = newLocal(Type.getType("I"));
-	// push(0);
-	// super.visitVarInsn(ISTORE,ind);
-
-
-
-	// super.visitLabel(startLabel);
-	// super.visitVarInsn(ILOAD,ind);
-	
-	// super.visitVarInsn(ALOAD,listIndex);
-	// super.visitMethodInsn(INVOKEVIRTUAL,
-	// 		      "Ljava/util/LinkedList;",
-	// 		      "size",
-	// 		      "()I");
-
-	// super.visitJumpInsn(IF_ICMPGE,endLabel);
-	// dup();
-	// super.visitVarInsn(ILOAD,ind);
-	// //elem to be stored in arr at ind
-	// super.visitVarInsn(ALOAD,listIndex);
-	// super.visitVarInsn(ILOAD,ind);
-	// super.visitMethodInsn(INVOKEVIRTUAL,
-	// 		      "Ljava/util/LinkedList;",
-	// 		      "get",
-	// 		      "(I)Ljava/lang/Object;");	
-	// visitVarInsn(ALOAD,i.intValue());
-	
-	// mv.visitInsn(AASTORE);
-
-	// super.visitIincInsn(ind,1);
-
-	// super.visitJumpInsn(GOTO,startLabel);
-
-	// super.visitLabel(endLabel);
-
-	// super.visitLabel(elser);
-
-
-	if (l.size() > 0 && opcode != ATHROW && false) {
+	if (l.size() > 0 && false) {
 	    mv.visitIntInsn(BIPUSH,l.size());
 	    mv.visitTypeInsn(ANEWARRAY,"Ljava/lang/Object;"); // #6
 	    int index = 0;
@@ -560,15 +477,9 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
      */
     @Override protected void onMethodEnter() {
 	if (met.equals("<clinit>")) {
-	    return;
+	    
 	}
-	if (met.equals("<init")) {
-	    push(des);
-	    loadThis();
-	    push((String) null);
-	    push((String) null);
-	    insertThreadAndNew(); 
-	}
+
 	// super.visitTypeInsn(NEW,"Ljava/util/LinkedList;");
 	// listIndex = newLocal(Type.getType("Ljava/util/LinkedList;"));
 	// dup();
@@ -583,18 +494,22 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
 	mv.visitLdcInsn(met);          // #1
 	mv.visitLdcInsn(des);          // #2
-	insertThisOrStatic();
-	//System.out.println("met enter: " + met + " " + des + " parCounter" + parametersCounter);
-	if (parametersCounter > 0 && false) {
+	insertThisOrStatic();          // #3-4
+
+	// System.out.println("met enter: ("+ acc + ") " + 
+	// 		   klass + " " + met + " " + des +
+	// 		   " parCounter" + parametersCounter);
+
+	if (parametersCounter > 0) {
 	    parameters = new int[parametersCounter];
 	    fillParameters(parameters);
 	    
 	    mv.visitIntInsn(BIPUSH,parameters.length);
-	    mv.visitTypeInsn(ANEWARRAY,"Ljava/lang/Object;"); // #6
+	    mv.visitTypeInsn(ANEWARRAY,"Ljava/lang/Object;"); // #5
 	    for (int i = 0; i < parameters.length;i++) {
 		mv.visitInsn(DUP);
 		mv.visitIntInsn(BIPUSH,i);
-		if (acc == H_INVOKEINTERFACE) {
+		if (isMetStatic) {
 		    mv.visitVarInsn(ALOAD,parameters[i]-1);
 		}
 		else {
@@ -604,21 +519,21 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	    }
 	}
 	else {
-	    visitInsn(ACONST_NULL);     // 6
+	    visitInsn(ACONST_NULL);     // 5
 	}
 
 	mv.visitMethodInsn(INVOKESTATIC,
 			   "java/lang/Thread",
 			   "currentThread",
-			   "()Ljava/lang/Thread;"); //7
+			   "()Ljava/lang/Thread;"); //6
 
 	mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","methodEnter",
 			   "(Ljava/lang/String;" +    // method name    #1
 			   "Ljava/lang/String;" +     // desc           #2
 			   "Ljava/lang/String;" +     // callee static  #3
-			   "Ljava/lang/Object;" +     // callee object  #5
-			   "[Ljava/lang/Object;" +    // args           #6
-			   "Ljava/lang/Thread;)V");   // current thread #7
+			   "Ljava/lang/Object;" +     // callee object  #4
+			   "[Ljava/lang/Object;" +    // args           #5
+			   "Ljava/lang/Thread;)V");   // current thread #6
     }
 
 
@@ -710,6 +625,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     		i++;
     	    }
     	}
+	
     }
 
 }

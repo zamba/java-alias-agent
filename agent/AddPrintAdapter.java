@@ -17,6 +17,8 @@ class AddMethodAdapter extends ClassVisitor implements Opcodes {
     @Override public MethodVisitor visitMethod(int access, String name,
     					       String desc, String signature, String[] exceptions) {
     	MethodVisitor mv = cv.visitMethod(access, name, desc, signature,exceptions);
+	if (access >= ACC_DEPRECATED)
+	    return mv;
     	if (!isInterface && mv != null ) {
     	    mv = new AddMethodEnterAdapter(access,name,desc,mv,owner);
     	}

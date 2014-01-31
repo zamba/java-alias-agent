@@ -36,7 +36,7 @@ Allocation::Allocation(string argklass, unsigned long argtag, unsigned long argc
 
 string Allocation::toString() {
   string alloc = 
-    "allocation:" +
+    "Allocation:" +
     to_string(tag) +
     " class:" +
     klass +
@@ -119,7 +119,7 @@ string StoreField::toString() {
     " \tcallee:" +
     ((static_callee.compare("") != 0) ? static_callee : to_string(callee)) +
     " \tvalue:" +
-    to_string(value) +
+    ((value != 0) ? to_string(value) : "-") +
       " \toldValue:" +
     to_string(old_value);
   return fm;
@@ -157,7 +157,7 @@ string MethodCall::toString() {
     }
 
   string mc = 
-    "Method Call: " +
+    "Method Enter: " +
     method +
     " " +
     description +
@@ -212,22 +212,21 @@ Returned::Returned(string method,
 }
 
 string Returned::toString() {
-  string args_str =  " out objs: ";
+  string args_str =  " Out of scope: ";
     for (int i=0;i<counter;i++) {
       args_str.append(to_string(outobjs[i]) + " ");
     }
   string mc = 
-    "Returned: " +
+    "Method exit: " +
     met +
     " " +
     desc +
-    " Obj:" +
-    to_string(target) +
     " callee:" +
     (!(staticcallee.empty()) ? "<static:" + staticcallee + ">" : to_string(callee)) +
     " caller:" +
-    (!(staticcaller.empty()) ? "<static:" + staticcaller + ">" : ((caller == 0) ? "-" : to_string(caller)))
-    
+    (!(staticcaller.empty()) ? "<static:" + staticcaller + ">" : ((caller == 0) ? "-" : to_string(caller))) +
+    " Return Value:" +
+    ((target != 0) ? to_string(target) : "-")
     ;
   return mc + args_str;
 }
@@ -284,6 +283,7 @@ void printList(list<Event*> list, int outputMethod, const char *filename) {
     myfile.open (filename);
     for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
       myfile << (*it)->toString() << endl;
+      cout << (*it)->getType();
     }
     myfile.close();
   }
