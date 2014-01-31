@@ -30,8 +30,6 @@ output
 agent/output
 
 Makefile
-makefile
-agent/Makefile
-agent/makefile
+
 
 *~
