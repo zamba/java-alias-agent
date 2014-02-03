@@ -6,7 +6,7 @@ import java.util.LinkedList;
 
 public class AddMethodEnterAdapter extends AdviceAdapter {
     
-    private boolean debug = true;
+    private boolean debug = false;
     private boolean visitLocals = true;
 
     private String met;
@@ -20,6 +20,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     int listIndex;
     
     boolean isMetStatic = false;
+    boolean problem = false;
 
     LinkedList<Integer> l = new LinkedList<Integer>();
 
@@ -30,9 +31,12 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	des = desc;
 	acc = access;
 	klass = owner;
+	
 	isMetStatic = isStatic(access);
-
-
+	if (debug)
+	    System.out.println("ASM Instrumenting Method: " + desc + " " + name);
+	//System.out.println("ASM Instrumenting Method: " + desc + " " + name);
+	problem = klass.equals("org/dacapo/parser/Config$Size") && met.equals("<init>");
     }
 
     boolean isStatic(int access) {
@@ -43,11 +47,25 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 /* NEW NEWARRAY ANEWARRAY MULTIANEWARRAY                                      */
 /******************************************************************************/
 
-
+    public void visitEnd() {
+	if (debug)
+	    System.out.println("ASM done instrumenting Method: "+ des + " "  + met );
+	if (problem)
+	    System.out.println("visitEnd");
+	//System.out.println("ASM done instrumenting Method: "+ des + " "  + met );
+	super.visitEnd();
+    }
 
     public void insertThisOrStatic() {
+	if (met.equals("<init>")) {
+	    push((String)null);
+	    push((String)null);
+	    return;
+	}
+	if (debug)
+	    System.out.println("ASM insertThisOrStatic: "+ des + " "  + met );
 	if (isMetStatic) {
-	    mv.visitLdcInsn(klass+"."+met);
+	    super.visitLdcInsn(klass+"."+met);
 	}
 	else {
 	    push((String)null);
@@ -59,10 +77,13 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	else {
 	    super.loadThis();
 	}
+	if (debug)
+	    System.out.println("ASM insertThisOrStatic: "+ des + " "  + met );
     }
 
     private void insertThreadAndNew() {
-	    mv.visitMethodInsn(INVOKESTATIC,
+
+	    super.visitMethodInsn(INVOKESTATIC,
 	    		       "java/lang/Thread",
 	    		       "currentThread",
 	    		       "()Ljava/lang/Thread;");
@@ -75,6 +96,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     }
 
     public void insertNewCode(String desc) {
+
 	dup();
 	push(desc);
 	swap();
@@ -88,6 +110,9 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
     public void visitTypeInsn(int opcode,
 			      String type) {
+	if (problem)
+	    System.out.println("visitTypeInsn opcode:" + opcode + " " + type);
+
 	if (opcode == NEW) {
 	    newObj++;
 	    if (currentArr != null) {
@@ -99,44 +124,77 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 		currentArr[0] = type;
 	    }
 	}
-	mv.visitTypeInsn(opcode,type);
+	super.visitTypeInsn(opcode,type);
 	if (opcode == NEW) {
 	    dup();
 	}
+
 	if (opcode == ANEWARRAY) {
 	    insertNewCode("[L"+type+";");
 	}
     }
 
+
+    
     public void visitMethodInsn(int opcode,
 				String owner,
 				String name,
 				String desc) {
-
-
-	super.visitMethodInsn(opcode,owner,name,desc);
-	// if (name.equals("<init>") && newObj > 0) {
-	//     System.out.println("INIT : " + owner + " " + name + " " + desc);
+	if (problem)
+	    System.out.println("visitMethodInsn opcode:" + opcode + " "+ owner + " " + name + " " + desc);
+	if (debug)
+	    System.out.println("ASM visitMet: "+ des + " "  + met );
+	// if (met.equals("<init>") && des.equals("()V")) {
+	//     System.out.println("ALIVEeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
 	// }
+	// if (met.equals("<init>") && des.equals("()V")) {
+	//     System.out.println("ALIVEeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
+	// }
+
+	// SUPER!?!?
+	super.visitMethodInsn(opcode,owner,name,desc);
+
+
+       // 	if (name.equals("<init>") && newObj > 0) {
+       // 	    System.out.println("INIT : " + owner + " " + name + " " + desc);
+       // 	}
+       // System.out.println("Inside : " + met + " " + owner + " " + name + " " + desc);
+	// if (name.equals("<init>") && met.equals("<init>")) {
+	//     System.out.println("initfrominit");
+	// }
+ 
 	if (name.equals("<init>")  &&
 	    currentArr != null &&
 	    newObj > 0 &&
 	    owner.equals(currentArr[newObj-1])) {
 
+	    // System.out.println(owner + " " + met  +  " " + newObj + " " + currentArr.length);
+
 	    newObj--;
-	    currentArr = Arrays.copyOf(currentArr,currentArr.length-1);
+	    if (currentArr.length == 1) {
+		currentArr = null;
+	    }
+	    else {
+		currentArr = Arrays.copyOf(currentArr,currentArr.length-1);
+	    }
 
 	    push(owner);
 	    swap();
 	    insertThisOrStatic();
 	    insertThreadAndNew();
+
 	}
+	if (debug)
+	    System.out.println("ASM visitMet: "+ des + " "  + met );
+
     }
 
 
     public void visitIntInsn(int opcode,
 			     int operand) {
-	mv.visitIntInsn(opcode,operand);
+	if (problem)
+	    System.out.println("visit int insn:" + opcode + " " + operand);
+	super.visitIntInsn(opcode,operand);
 	if (opcode == NEWARRAY) {
 	    String result = null;
 	    if (operand == T_BOOLEAN)
@@ -155,6 +213,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 		result = "[I";
 	    if (operand == T_LONG)
 		result = "[J";
+
 	    insertNewCode(result);
 	}
     }
@@ -162,7 +221,10 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
     public void visitMultiANewArrayInsn(String desc,
 					int dims) {
-	mv.visitMultiANewArrayInsn(desc,dims);
+	if (problem)
+	    System.out.println("visitmulti opcode:" + desc);
+	super.visitMultiANewArrayInsn(desc,dims);
+	if (!problem)
 	insertNewCode(desc);
     }
 
@@ -208,19 +270,19 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	    else {
 		// PROBLEMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 		// --------------------------------------
-		visitVarInsn(ALOAD,var); //#2
+		super.visitVarInsn(ALOAD,var); //#2
 		// --------------------------------------
 	    }
 
 	    push(met); // #3
 	    push(des); // #4
 	    insertThisOrStatic(); // #5,6
-	    mv.visitMethodInsn(INVOKESTATIC,
+	    super.visitMethodInsn(INVOKESTATIC,
 			       "java/lang/Thread",
 			       "currentThread",
 			       "()Ljava/lang/Thread;"); // #7
 
-	    mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","storeVar",
+	    super.visitMethodInsn(INVOKESTATIC,"NativeInterface","storeVar",
 			       "(Ljava/lang/Object;" +    // stored obj      #1
 			       "Ljava/lang/Object;" +	 // old value        #2		       
 			       "Ljava/lang/String;" +     // method name     #3
@@ -240,7 +302,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
 
     public void addThreadAndField(int n) {
-	mv.visitMethodInsn(INVOKESTATIC,
+	super.visitMethodInsn(INVOKESTATIC,
 			   "java/lang/Thread",
 			   "currentThread",
 			   "()Ljava/lang/Thread;"); //9
@@ -297,6 +359,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     		else if (fc == 'J' || fc == 'D') {
     		    dup2X1();
     		    pop2();
+		    dupX2();
     		    push((String)null);
     		}
     		// value is primitive
@@ -359,7 +422,6 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     	//getfield objref -> value
     	if (opcode == GETFIELD) {
     	    //objref value
-
     	    if (fc == 'L' || fc == '[') {
     		dupX1();
     		//value objref value
@@ -369,6 +431,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     		dup2X1();
     		//value objref value
     		pop2();
+		
     		//value objref
     		push((String)null);
     		//value objref null
@@ -393,7 +456,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     		dup();
     	    }
     	    else {
-    		push((String)null);		
+    		push((String)null);	
     	    }
     	    push(owner);
     	    push(name);
@@ -410,11 +473,15 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
 
     @Override protected void onMethodExit(int opcode) {
-
+	if(problem)
+	    System.out.println("methodexit" + des);
+	if (debug)
+	    System.out.println("ASM onMetExit: "+ des + " "  + met );
 	if (opcode == ATHROW) {
 	    
 	    return;
 	}
+
 
 	if (opcode == ARETURN) {
 	    dup();// #1
@@ -430,14 +497,14 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
 
 	if (l.size() > 0 && false) {
-	    mv.visitIntInsn(BIPUSH,l.size());
-	    mv.visitTypeInsn(ANEWARRAY,"Ljava/lang/Object;"); // #6
+	    super.visitIntInsn(BIPUSH,l.size());
+	    super.visitTypeInsn(ANEWARRAY,"Ljava/lang/Object;"); // #6
 	    int index = 0;
 	    for (Integer i : l) {
-	    	mv.visitInsn(DUP);
-	    	mv.visitIntInsn(BIPUSH,index++);
-	    	visitVarInsn(ALOAD,i.intValue());
-	    	mv.visitInsn(AASTORE);
+	    	super.visitInsn(DUP);
+	    	super.visitIntInsn(BIPUSH,index++);
+	    	super.visitVarInsn(ALOAD,i.intValue());
+	    	super.visitInsn(AASTORE);
 	    }
 	}
 	// //-----------------------------------
@@ -448,7 +515,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	}
 
 	
-	mv.visitMethodInsn(INVOKESTATIC,
+	super.visitMethodInsn(INVOKESTATIC,
 			   "java/lang/Thread",
 			   "currentThread",
 			   "()Ljava/lang/Thread;"); // #7
@@ -461,6 +528,8 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 			   "Ljava/lang/Object;" +     // callee          #5
 			   "[Ljava/lang/Object;" +    // out of scopes   #6
 			   "Ljava/lang/Thread;)V");   // current thread  #7
+	if (debug)
+	    System.out.println("ASM onMetExit: "+ des + " "  + met );
     }
 
 
@@ -476,9 +545,23 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	*****TODO CLINIT??*****
      */
     @Override protected void onMethodEnter() {
+	if(problem) {
+	    System.out.println("methodenter" + des);
+	    
+	    Type[] apa = Type.getArgumentTypes(des);
+	    // System.out.println("apa=" + apa);
+	    for (int i = 0; i < apa.length;i++) {
+		System.out.println(apa[i].getInternalName());
+	    }
+	    }
+	if (debug)
+	    System.out.println("ASM onMetEnter: "+ des + " "  + met );
+
 	if (met.equals("<clinit>")) {
 	    
 	}
+
+
 
 	// super.visitTypeInsn(NEW,"Ljava/util/LinkedList;");
 	// listIndex = newLocal(Type.getType("Ljava/util/LinkedList;"));
@@ -492,37 +575,44 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     	int parametersCounter = countParameters();
     	int[] parameters;
 
-	mv.visitLdcInsn(met);          // #1
-	mv.visitLdcInsn(des);          // #2
+	super.visitLdcInsn(met);          // #1
+	super.visitLdcInsn(des);          // #2
 	insertThisOrStatic();          // #3-4
 
 	// System.out.println("met enter: ("+ acc + ") " + 
 	// 		   klass + " " + met + " " + des +
 	// 		   " parCounter" + parametersCounter);
 
+	if (debug)
+	    System.out.println("ASM onMetEnter: "+ des + " "  + met );
+
 	if (parametersCounter > 0) {
 	    parameters = new int[parametersCounter];
 	    fillParameters(parameters);
-	    
-	    mv.visitIntInsn(BIPUSH,parameters.length);
-	    mv.visitTypeInsn(ANEWARRAY,"Ljava/lang/Object;"); // #5
+
+	    // System.out.println(met + " " + des + parametersCounter + " " + Arrays.toString(parameters));
+
+	    // System.out.println(Arrays.toString(parameters));
+	    super.visitIntInsn(BIPUSH,parameters.length);
+	    super.visitTypeInsn(ANEWARRAY,"Ljava/lang/Object;"); // #5
+
 	    for (int i = 0; i < parameters.length;i++) {
-		mv.visitInsn(DUP);
-		mv.visitIntInsn(BIPUSH,i);
+		super.visitInsn(DUP);
+		super.visitIntInsn(BIPUSH,i);
 		if (isMetStatic) {
-		    mv.visitVarInsn(ALOAD,parameters[i]-1);
+		    super.visitVarInsn(ALOAD,parameters[i]-1);
 		}
 		else {
-		    mv.visitVarInsn(ALOAD,parameters[i]);
+		    super.visitVarInsn(ALOAD,parameters[i]);
 		}
-		mv.visitInsn(AASTORE);
+		super.visitInsn(AASTORE);
 	    }
 	}
 	else {
-	    visitInsn(ACONST_NULL);     // 5
+	    super.visitInsn(ACONST_NULL);     // 5
 	}
 
-	mv.visitMethodInsn(INVOKESTATIC,
+	super.visitMethodInsn(INVOKESTATIC,
 			   "java/lang/Thread",
 			   "currentThread",
 			   "()Ljava/lang/Thread;"); //6
@@ -534,6 +624,9 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 			   "Ljava/lang/Object;" +     // callee object  #4
 			   "[Ljava/lang/Object;" +    // args           #5
 			   "Ljava/lang/Thread;)V");   // current thread #6
+	if (debug)
+	    System.out.println("ASM onMetEnter: "+ des + " "  + met );
+
     }
 
 
@@ -541,6 +634,8 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     @Override public void visitMaxs(int maxStack, int maxLocals) {
 	// Using ClassWriter.COMPUTE_FRAMES, so arguments to visitMaxs
 	// is calculated automaticly for the cost of some performance
+        //System.out.println("maxs: " + maxStack + " " + maxLocals);
+
 	super.visitMaxs(0,0);
     }
 

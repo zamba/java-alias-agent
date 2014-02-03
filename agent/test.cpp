@@ -56,7 +56,7 @@ bool method_call(list<Event *> list)
       if ((*it)->getType() == 4)
 	nr++;
     }
-
+    cout << to_string(nr) << endl;
     if (nr == 12)
       return true;
 

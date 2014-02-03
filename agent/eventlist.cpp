@@ -283,7 +283,7 @@ void printList(list<Event*> list, int outputMethod, const char *filename) {
     myfile.open (filename);
     for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
       myfile << (*it)->toString() << endl;
-      cout << (*it)->getType();
+      // cout << (*it)->getType();
     }
     myfile.close();
   }

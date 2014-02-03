@@ -31,7 +31,7 @@ test:
 	@java -agentpath:./testagent.so=test,6 test/VarStore
 
 jartest:
-	@jar cvfe jartest.jar Test Test.class Foo.class Bar.class
+	@jar cvfe jartest.jar Test Test.class Foo.class Zolo.class Yolo.class
 	@java  -agentpath:./testagent.so -jar jartest.jar
 
 bench:

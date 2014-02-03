@@ -592,8 +592,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
 		  jint* new_class_data_len,
 		  unsigned char** new_class_data) 
 {
-  // printf("not instrumenting: %s \n",name);
-  // return;
+
 
   // Avoid transform of system classes
   enter_critical_section(); {
@@ -603,25 +602,27 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
     }
 
 
-  // Avoid transform of instrument classes
-  const char *result = strstr(name,"org/objectweb/asm/");
-  if(result
-     || strcmp(name,"AddMethodEnterAdapter") == 0
-     || strcmp(name,"NativeInterface") == 0
-     || strcmp(name,"AddMethodAdapter") == 0
-     || strcmp(name,"Instrument") == 0) {
-    return;
-  }
-    // printf("%s %d \n",name,class_data_len);
 
+    // Avoid transformation of instrument classes
+    const char *result = strstr(name,"org/objectweb/asm/");
+    if(result
+       || strcmp(name,"AddMethodEnterAdapter") == 0
+       || strcmp(name,"NativeInterface") == 0
+       || strcmp(name,"AddMethodAdapter") == 0
+       || strcmp(name,"Instrument") == 0) {
+      return;
+    }
+
+    //printf("c++ instrumenting: %s \n",name);
+
+    // printf("%s %d \n",name,class_data_len);
+  
     jbyteArray barr = jni->NewByteArray(class_data_len);
 
     jni->SetByteArrayRegion(barr,0,class_data_len,(jbyte*)(class_data));
 
 
     jbyteArray new_barr = (jbyteArray) jni->CallStaticObjectMethod(g_cls,g_mid,barr);
-
-
 
     if (new_barr != NULL) {
 
@@ -640,10 +641,11 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
 
       *new_class_data_len = len;
       *new_class_data = newclass;
+      //printf("c++ done instrumenting: %s \n\n",name);
     }
-    // cout << "Instrumented:";
-    // printf("%s",name);
-    // cout << endl;
+    else {
+      //printf("c++ failed to instrument: %s \n\n",name);
+    }
 
   }exit_critical_section();
 }
