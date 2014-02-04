@@ -21,7 +21,7 @@ all:
 	@$(CC) -shared $(LIBS) -o testagent.so alias.o eventlist.o test.o
 
 test:
-	@javac test/*.java
+	@javac -d . test/*.java
 	@java -agentpath:./testagent.so=test,1 test/Allocation
 	@java -agentpath:./testagent.so=test,2 test/FieldStore
 	@java -agentpath:./testagent.so=test,3 test/FieldLoad
