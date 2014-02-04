@@ -10,16 +10,15 @@ endif
 ifeq ($(UNAME),Darwin)
 	CC = clang++
 	IFLAGS = -I /System/Library/Frameworks/JavaVM.framework/Headers -I /Library/Java/JavaVirtualMachines/jdk1.7.0_21.jdk/Contents/Home/include/
+	LIBS = -stdlib=libc++
 endif
-
-
 
 all:
 	@javac  *.java
 	@javah NativeInterface
 	@$(CC) -std=c++11 -o ninja ninja.cpp
-	@$(CC) -c -fPIC -std=c++11 $(IFLAGS) alias.cpp eventlist.cpp test.cpp
-	@$(CC) -shared -o testagent.so alias.o eventlist.o test.o
+	@$(CC) -c -fPIC -std=c++11 $(LIBS) $(IFLAGS) alias.cpp eventlist.cpp test.cpp
+	@$(CC) -shared $(LIBS) -o testagent.so alias.o eventlist.o test.o
 
 test:
 	@javac test/*.java
