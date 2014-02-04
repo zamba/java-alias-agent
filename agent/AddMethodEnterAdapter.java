@@ -36,7 +36,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	if (debug)
 	    System.out.println("ASM Instrumenting Method: " + desc + " " + name);
 	//System.out.println("ASM Instrumenting Method: " + desc + " " + name);
-	problem = klass.equals("org/dacapo/parser/Config$Size") && met.equals("<init>");
+	problem = klass.equals("org/dacapo/parser/Config$Size") && met.equals("<init>") && false;
     }
 
     boolean isStatic(int access) {
@@ -346,7 +346,10 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     			       String desc) {
 
     	char fc = desc.charAt(0);
-
+	if (name.equals("this$0")) {
+	    super.visitFieldInsn(opcode,owner,name,desc);
+	    return;
+	}
     	if (opcode == PUTFIELD || opcode == GETFIELD || opcode == PUTSTATIC) {
     	    if (opcode == PUTFIELD) {
     		//stack objref value
