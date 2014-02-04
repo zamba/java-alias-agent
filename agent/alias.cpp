@@ -613,34 +613,34 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
       return;
     }
     
-    JNIEnv* env = jni;
-jclass cls = env->GetObjectClass(loader);
+//     JNIEnv* env = jni;
+// jclass cls = env->GetObjectClass(loader);
 
-// First get the class object
-jmethodID mid = env->GetMethodID(cls, "getClass", "()Ljava/lang/Class;");
-jobject clsObj = env->CallObjectMethod(loader, mid);
+// // First get the class object
+// jmethodID mid = env->GetMethodID(cls, "getClass", "()Ljava/lang/Class;");
+// jobject clsObj = env->CallObjectMethod(loader, mid);
 
-// Now get the class object's class descriptor
-cls = env->GetObjectClass(clsObj);
+// // Now get the class object's class descriptor
+// cls = env->GetObjectClass(clsObj);
 
-// Find the getName() method on the class object
-mid = env->GetMethodID(cls, "getName", "()Ljava/lang/String;");
+// // Find the getName() method on the class object
+// mid = env->GetMethodID(cls, "getName", "()Ljava/lang/String;");
 
-// Call the getName() to get a jstring object back
-jstring strObj = (jstring)env->CallObjectMethod(clsObj, mid);
+// // Call the getName() to get a jstring object back
+// jstring strObj = (jstring)env->CallObjectMethod(clsObj, mid);
 
-// Now get the c string from the java jstring object
-const char* str = env->GetStringUTFChars(strObj, NULL);
+// // Now get the c string from the java jstring object
+// const char* str = env->GetStringUTFChars(strObj, NULL);
 
-// Print the class name
- printf("Classloader %s is loading: %s \n\n", str,name);
+// // Print the class name
+//  printf("Classloader %s is loading: %s \n\n", str,name);
 
- if (strcmp(str,"sun.misc.Launcher$AppClassLoader") != 0) {
-   return;
- }
+//  if (strcmp(str,"sun.misc.Launcher$AppClassLoader") != 0) {
+//    return;
+//  }
 
-// Release the memory pinned char array
-env->ReleaseStringUTFChars(strObj, str);
+// // Release the memory pinned char array
+// env->ReleaseStringUTFChars(strObj, str);
 
 
 
@@ -689,7 +689,7 @@ env->ReleaseStringUTFChars(strObj, str);
     }
 
   }exit_critical_section();
-  printf("done\n\n");
+  // printf("done\n\n");
 }
 
 

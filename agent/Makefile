@@ -36,7 +36,7 @@ jartest:
 
 bench:
 #avrora batik eclipse fop h2 jython luindex lusearch pmd sunflow tomcat tradebeans tradesoap xalan
-	java -agentpath:./testagent.so -jar ~/Desktop/dacapo-9.12-bach.jar batik
+	java -agentpath:./testagent.so -jar ~/Desktop/dacapo-9.12-bach.jar eclipse
 
 clean:
 	@rm -f *.class
