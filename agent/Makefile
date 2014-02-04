@@ -35,7 +35,8 @@ jartest:
 	@java  -agentpath:./testagent.so -jar jartest.jar
 
 bench:
-	java -agentpath:./testagent.so -jar ~/Desktop/dacapo-9.12-bach.jar batik       
+#avrora batik eclipse fop h2 jython luindex lusearch pmd sunflow tomcat tradebeans tradesoap xalan
+	java -agentpath:./testagent.so -jar ~/Desktop/dacapo-9.12-bach.jar batik
 
 clean:
 	@rm -f *.class
@@ -48,5 +49,6 @@ clean:
 	@rm -f ninja
 	@rm -f *.log
 	@rm -f jartest.jar
+	@rm -rf scratch
 
 .PHONY: clean test bench
