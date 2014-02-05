@@ -24,7 +24,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
     LinkedList<Integer> l = new LinkedList<Integer>();
 
-    public AddMethodEnterAdapter(int access, String name, String desc,
+    protected AddMethodEnterAdapter(int access, String name, String desc,
 				 MethodVisitor mv, String owner) {
 	super(ASM4, mv, access, name, desc);
 	met = name;
@@ -32,11 +32,13 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	acc = access;
 	klass = owner;
 	
-	isMetStatic = isStatic(access);
+	isMetStatic = isStatic(methodAccess);
 	if (debug)
 	    System.out.println("ASM Instrumenting Method: " + desc + " " + name);
 	//System.out.println("ASM Instrumenting Method: " + desc + " " + name);
 	problem = klass.equals("org/dacapo/parser/Config$Size") && met.equals("<init>") && false;
+	// System.out.println(access + " " + methodAccess + " " + methodDesc);
+	//System.out.println(owner + " " + name);
     }
 
     boolean isStatic(int access) {
@@ -53,7 +55,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	if (problem)
 	    System.out.println("visitEnd");
 	//System.out.println("ASM done instrumenting Method: "+ des + " "  + met );
-	super.visitEnd();
+	mv.visitEnd();
     }
 
     public void insertThisOrStatic() {
@@ -65,7 +67,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	if (debug)
 	    System.out.println("ASM insertThisOrStatic: "+ des + " "  + met );
 	if (isMetStatic) {
-	    super.visitLdcInsn(klass+"."+met);
+	    mv.visitLdcInsn(klass);
 	}
 	else {
 	    push((String)null);
@@ -75,7 +77,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	    push((String)null);
 	}
 	else {
-	    super.loadThis();
+	    loadThis();
 	}
 	if (debug)
 	    System.out.println("ASM insertThisOrStatic: "+ des + " "  + met );
@@ -83,7 +85,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
     private void insertThreadAndNew() {
 
-	    super.visitMethodInsn(INVOKESTATIC,
+	    mv.visitMethodInsn(INVOKESTATIC,
 	    		       "java/lang/Thread",
 	    		       "currentThread",
 	    		       "()Ljava/lang/Thread;");
@@ -113,6 +115,9 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	if (problem)
 	    System.out.println("visitTypeInsn opcode:" + opcode + " " + type);
 
+
+
+
 	if (opcode == NEW) {
 	    newObj++;
 	    if (currentArr != null) {
@@ -131,6 +136,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
 	if (opcode == ANEWARRAY) {
 	    insertNewCode("[L"+type+";");
+	    // System.out.println("anewarray " + type);
 	}
     }
 
@@ -140,10 +146,32 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 				String owner,
 				String name,
 				String desc) {
+	// if (name.equals("invoke")) {
+	//     System.out.println(opcode + " || " +  klass + "." + met + "()" + " calling " + owner + "." + name + desc);
+	// }
 	if (problem)
 	    System.out.println("visitMethodInsn opcode:" + opcode + " "+ owner + " " + name + " " + desc);
 	if (debug)
 	    System.out.println("ASM visitMet: "+ des + " "  + met );
+
+
+	    // System.out.println("visitMethodInsn opcode:" + opcode + " "+ owner + " " + name + " " + desc);
+	
+	// String xy = name;
+	// int len = xy.length();
+	// if (len == 0) {
+	//     System.out.println("xy = 0");
+	// }
+	// else {
+	//     if (xy.charAt(0) == 'L' && xy.charAt(len-1) == ';') {
+	// 	System.out.println(xy);	    
+	//     }
+	// }
+
+
+
+
+
 	// if (met.equals("<init>") && des.equals("()V")) {
 	//     System.out.println("ALIVEeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
 	// }
@@ -152,6 +180,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	// }
 
 	// SUPER!?!?
+	// System.out.println("visitMethodInsn opcode:" + opcode + " "+ owner + " " + name + " " + desc);
 	super.visitMethodInsn(opcode,owner,name,desc);
 
 
@@ -270,19 +299,19 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	    else {
 		// PROBLEMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 		// --------------------------------------
-		super.visitVarInsn(ALOAD,var); //#2
+		mv.visitVarInsn(ALOAD,var); //#2
 		// --------------------------------------
 	    }
 
 	    push(met); // #3
 	    push(des); // #4
 	    insertThisOrStatic(); // #5,6
-	    super.visitMethodInsn(INVOKESTATIC,
+	    mv.visitMethodInsn(INVOKESTATIC,
 			       "java/lang/Thread",
 			       "currentThread",
 			       "()Ljava/lang/Thread;"); // #7
 
-	    super.visitMethodInsn(INVOKESTATIC,"NativeInterface","storeVar",
+	    mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","storeVar",
 			       "(Ljava/lang/Object;" +    // stored obj      #1
 			       "Ljava/lang/Object;" +	 // old value        #2		       
 			       "Ljava/lang/String;" +     // method name     #3
@@ -302,7 +331,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
 
     public void addThreadAndField(int n) {
-	super.visitMethodInsn(INVOKESTATIC,
+	mv.visitMethodInsn(INVOKESTATIC,
 			   "java/lang/Thread",
 			   "currentThread",
 			   "()Ljava/lang/Thread;"); //9
@@ -347,7 +376,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
     	char fc = desc.charAt(0);
 	if (name.equals("this$0")) {
-	    super.visitFieldInsn(opcode,owner,name,desc);
+	    mv.visitFieldInsn(opcode,owner,name,desc);
 	    return;
 	}
     	if (opcode == PUTFIELD || opcode == GETFIELD || opcode == PUTSTATIC) {
@@ -379,7 +408,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     		    //stack objref value objref (obj/arr/null) objref (obj/arr/null)
     		    pop();
     		    //stack objref value objref (obj/arr/null) objref
-    		    super.visitFieldInsn(GETFIELD,owner,name,desc);
+    		    mv.visitFieldInsn(GETFIELD,owner,name,desc);
     		    //stack objref value objref (obj/arr/null) oldvalue
     		}
     		else {
@@ -403,7 +432,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     		swap();
 
     		if(fc == 'L' || fc == '[') {
-    		    super.visitFieldInsn(GETSTATIC,owner,name,desc);
+    		    mv.visitFieldInsn(GETSTATIC,owner,name,desc);
     		}
     		else {
     		    push((String)null);
@@ -500,14 +529,14 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
 
 	if (l.size() > 0 && false) {
-	    super.visitIntInsn(BIPUSH,l.size());
-	    super.visitTypeInsn(ANEWARRAY,"Ljava/lang/Object;"); // #6
+	    mv.visitIntInsn(BIPUSH,l.size());
+	    mv.visitTypeInsn(ANEWARRAY,"java/lang/Object"); // #6
 	    int index = 0;
 	    for (Integer i : l) {
-	    	super.visitInsn(DUP);
-	    	super.visitIntInsn(BIPUSH,index++);
-	    	super.visitVarInsn(ALOAD,i.intValue());
-	    	super.visitInsn(AASTORE);
+	    	mv.visitInsn(DUP);
+	    	mv.visitIntInsn(BIPUSH,index++);
+	    	mv.visitVarInsn(ALOAD,i.intValue());
+	    	mv.visitInsn(AASTORE);
 	    }
 	}
 	// //-----------------------------------
@@ -518,7 +547,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	}
 
 	
-	super.visitMethodInsn(INVOKESTATIC,
+	mv.visitMethodInsn(INVOKESTATIC,
 			   "java/lang/Thread",
 			   "currentThread",
 			   "()Ljava/lang/Thread;"); // #7
@@ -551,11 +580,11 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	if(problem) {
 	    System.out.println("methodenter" + des);
 	    
-	    Type[] apa = Type.getArgumentTypes(des);
-	    // System.out.println("apa=" + apa);
-	    for (int i = 0; i < apa.length;i++) {
-		System.out.println(apa[i].getInternalName());
-	    }
+	    // Type[] apa = Type.getArgumentTypes(des);
+	    // // System.out.println("apa=" + apa);
+	    // for (int i = 0; i < apa.length;i++) {
+	    // 	System.out.println(apa[i].getInternalName());
+	    // }
 	    }
 	if (debug)
 	    System.out.println("ASM onMetEnter: "+ des + " "  + met );
@@ -578,8 +607,8 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     	int parametersCounter = countParameters();
     	int[] parameters;
 
-	super.visitLdcInsn(met);          // #1
-	super.visitLdcInsn(des);          // #2
+	mv.visitLdcInsn(met);          // #1
+	mv.visitLdcInsn(des);          // #2
 	insertThisOrStatic();          // #3-4
 
 	// System.out.println("met enter: ("+ acc + ") " + 
@@ -596,26 +625,26 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	    // System.out.println(met + " " + des + parametersCounter + " " + Arrays.toString(parameters));
 
 	    // System.out.println(Arrays.toString(parameters));
-	    super.visitIntInsn(BIPUSH,parameters.length);
-	    super.visitTypeInsn(ANEWARRAY,"Ljava/lang/Object;"); // #5
+	    mv.visitIntInsn(BIPUSH,parameters.length);
+	    mv.visitTypeInsn(ANEWARRAY,"java/lang/Object"); // #5
 
 	    for (int i = 0; i < parameters.length;i++) {
-		super.visitInsn(DUP);
-		super.visitIntInsn(BIPUSH,i);
+		mv.visitInsn(DUP);
+		mv.visitIntInsn(BIPUSH,i);
 		if (isMetStatic) {
-		    super.visitVarInsn(ALOAD,parameters[i]-1);
+		    mv.visitVarInsn(ALOAD,parameters[i]-1);
 		}
 		else {
-		    super.visitVarInsn(ALOAD,parameters[i]);
+		    mv.visitVarInsn(ALOAD,parameters[i]);
 		}
-		super.visitInsn(AASTORE);
+		mv.visitInsn(AASTORE);
 	    }
 	}
 	else {
-	    super.visitInsn(ACONST_NULL);     // 5
+	    mv.visitInsn(ACONST_NULL);     // 5
 	}
 
-	super.visitMethodInsn(INVOKESTATIC,
+	mv.visitMethodInsn(INVOKESTATIC,
 			   "java/lang/Thread",
 			   "currentThread",
 			   "()Ljava/lang/Thread;"); //6

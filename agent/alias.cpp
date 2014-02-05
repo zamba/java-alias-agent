@@ -111,6 +111,16 @@ jlong get_tag(jobject obj) {
 /******************************************************************************/
 
 
+
+
+
+
+
+
+
+
+
+
 /* 
    TODO:
 */
@@ -571,6 +581,42 @@ cbObjectFree(jvmtiEnv *jvmti_env,
 /* System Callbacks                                                           */
 /******************************************************************************/
 
+// void JNICALL
+// Exception(jvmtiEnv *jvmti_env,
+//             JNIEnv* jni_env,
+//             jthread thread,
+//             jmethodID method,
+//             jlocation location,
+//             jobject exception,
+//             jmethodID catch_method,
+// 	  jlocation catch_location) {
+//   printf("exception\n");
+// }
+
+
+
+// void JNICALL
+// ExceptionCatch(jvmtiEnv *jvmti_env,
+//             JNIEnv* jni_env,
+//             jthread thread,
+//             jmethodID method,
+//             jlocation location,
+// 	       jobject exception) {
+//   printf("exception catch\n");
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /*
   Sent by the VM when a classes is being loaded into the VM
@@ -783,6 +829,7 @@ Agent_OnLoad(JavaVM *vm,
   capabilities.can_tag_objects = 1;
   capabilities.can_access_local_variables = 1;
   capabilities.can_generate_object_free_events = 1;
+  capabilities.can_generate_exception_events = 1;
   error = jvmti->AddCapabilities(&capabilities);
   if(error != JVMTI_ERROR_NONE) {
     printf("ERROR set capabilities");
@@ -795,6 +842,8 @@ Agent_OnLoad(JavaVM *vm,
   callbacks.VMInit = &VMInit;
   callbacks.ClassFileLoadHook = &ClassFileLoadHook;
   callbacks.ObjectFree = &cbObjectFree;
+  // callbacks.Exception = &Exception;
+  // callbacks.ExceptionCatch = &ExceptionCatch;
   error = jvmti->SetEventCallbacks(&callbacks,sizeof(callbacks));
   if(error != JVMTI_ERROR_NONE) {
     printf("ERROR set Callbacks");
@@ -802,6 +851,10 @@ Agent_OnLoad(JavaVM *vm,
   }
 
   // Enable EventNotification mode
+  // jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION, NULL);
+  // jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION_CATCH, NULL);
+
+
   error = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
   if(error != JVMTI_ERROR_NONE) {
     printf("ERROR setNotificationMode INIT");
@@ -825,7 +878,11 @@ Agent_OnLoad(JavaVM *vm,
     return JNI_ERR;
   }
   // jvmti->AddToBootstrapClassLoaderSearch(segment);
-  jvmti->AddToSystemClassLoaderSearch(segment);
+   jvmti->AddToSystemClassLoaderSearch(segment);
+  // jvmti->AddToSystemClassLoaderSearch("/home/erik/Desktop/dacapo-9.12-bach.jar");
+  // jvmti->AddToSystemClassLoaderSearch("/home/erik/java-alias-agent/agent/scratch/jar");
+
+  // jvmti->AddToBootstrapClassLoaderSearch("/home/erik/java-alias-agent/agent/scratch/jar");
 
   return JNI_OK;
 }
