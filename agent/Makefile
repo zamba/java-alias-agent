@@ -35,7 +35,14 @@ jartest:
 
 bench:
 #avrora batik eclipse fop h2 jython luindex lusearch pmd sunflow tomcat tradebeans tradesoap xalan
-	java -agentpath:./testagent.so -jar ~/Desktop/dacapo-9.12-bach.jar eclipse
+#completes and passes:			pmd
+#completes(?) but fail validation: 	avrora
+#JSR/RET: 				batik fop luindex lusearch xalan
+#expected to find obj/arr on stack: 	h2 eclipse
+#register#1 contains wrong type: 	jython
+#register#2 contains wrong type: 	sunflow tomcat
+#????					tradebeans tradesoap
+	java -agentpath:./testagent.so -jar ~/Desktop/dacapo-9.12-bach.jar pmd
 
 clean:
 	@rm -f *.class
