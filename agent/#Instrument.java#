@@ -6,7 +6,7 @@ public class Instrument {
 
     public static byte[] transform(byte[] b1) {
 	ClassReader cr = new ClassReader(b1);
-	ClassWriter cw = new MyClassWriter(cr,ClassWriter.COMPUTE_MAXS);
+	ClassWriter cw = new MyClassWriter(cr,ClassWriter.COMPUTE_FRAMES);
 	AddMethodAdapter ca = new AddMethodAdapter(cw);
 
 	// AddMethodAdapter ca = new AddMethodAdapter(new CheckClassAdapter(cw));

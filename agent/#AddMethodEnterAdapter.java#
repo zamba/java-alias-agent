@@ -369,7 +369,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
       TODO(low prio):
          rewrite this method to make it more readable
     */
-    public void visitFieldInsn(int opcode,
+    public void (int opcode,
     			       String owner,
     			       String name,
     			       String desc) {

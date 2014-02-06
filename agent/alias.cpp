@@ -19,6 +19,7 @@ bool getField = true;
 bool storeField = true;
 bool returns = true;
 bool storeVar = true;
+bool enableAll = false;
 
 bool test = false;
 int testnr = 0;
@@ -135,7 +136,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_storeVar
  jobject callee,
  jthread thread) 
 {
-  if (storeVar) {
+  if (storeVar && enableAll) {
     enter_critical_section(); {
       jlong stored_tag = get_tag(stored);
       jlong callee_tag = get_tag(callee);
@@ -175,7 +176,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_storeField
  jobject caller,
  jthread thread) 
 {
-  if (storeField) {
+  if (storeField && enableAll) {
     enter_critical_section(); {
       jlong caller_tag = get_tag(caller);
       jlong callee_tag = get_tag(callee);
@@ -224,7 +225,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_loadField
  jobject caller,
  jthread thread)
 {
-  if (getField) {
+  if (getField && enableAll) {
     enter_critical_section(); {
       jlong caller_tag = get_tag(caller);
       jlong callee_tag = get_tag(callee);
@@ -296,7 +297,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
       g_jvmti->GetMethodModifiers(frame[1].method,&access_flags);
       //printf("calling met: %s access flags: %d \n",methodName2, access_flags);
 
-      if (access_flags >= 8) {
+      if (access_flags & 8 != 0) {
   	jclass declaring_class;
   	char *source_name;
   	jvmtiError error = g_jvmti->GetMethodDeclaringClass(frame[1].method,&declaring_class);
@@ -345,7 +346,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
   	  /* generate new event */
   	  g_jvmti->SetTag(current,g_objectid++);
   	  argtags[i] = g_objectid - 1;
-  	  if (alloc) {
+  	  if (alloc && enableAll) {
   	    Allocation *event = new Allocation ("N/A",argtags[i],caller_tag,"-");
   	    eventlist.push_back(event);
   	  }
@@ -353,7 +354,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
       }
     }
 
-    if (methodEnter){
+    if (methodEnter && enableAll){
       MethodCall *event = new MethodCall (cp_name,
   					  cp_desc,
   					  cp_callee,
@@ -384,7 +385,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
  jobjectArray outOfScopes,
  jthread thread ) 
 {
-  if (returns) {
+  if (returns && enableAll) {
     enter_critical_section(); {
       jlong returned_tag = get_tag(returned);
       jlong callee_tag = get_tag(callee);
@@ -412,7 +413,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 	g_jvmti->GetMethodModifiers(frame[1].method,&access_flags);
 	//printf("calling met: %s access flags: %d \n",methodName2, access_flags);
 	// flags == 9
-	if (access_flags >= 8) {
+	if (access_flags & 8 != 0) {
 	  jclass declaring_class;
 	  char *source_name;
 	  jvmtiError error = g_jvmti->GetMethodDeclaringClass(frame[1].method,&declaring_class);
@@ -498,7 +499,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_newObj
 	stored_tag = g_objectid - 1;
       }
     
-    if (alloc) {
+    if (alloc && enableAll) {
       string type = toCPS(env,desc);
       jlong caller_tag = get_tag(caller);
       string cp_staticcaller;
@@ -521,7 +522,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_newObj
 	  //printf("calling met: %s access flags: %d \n",methodName2, access_flags);
 	  // flags == 9
 	  
-	  if (access_flags >= 8) {
+	  if (access_flags & 8 != 0) {
 	    jclass declaring_class;
 	    char *source_name;
 	    jvmtiError error = g_jvmti->GetMethodDeclaringClass(frame[0].method,&declaring_class);
