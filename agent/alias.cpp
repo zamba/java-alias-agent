@@ -297,7 +297,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
       g_jvmti->GetMethodModifiers(frame[1].method,&access_flags);
       //printf("calling met: %s access flags: %d \n",methodName2, access_flags);
 
-      if (access_flags & 8 != 0) {
+      if ((access_flags & 8) != 0) {
   	jclass declaring_class;
   	char *source_name;
   	jvmtiError error = g_jvmti->GetMethodDeclaringClass(frame[1].method,&declaring_class);
@@ -413,7 +413,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 	g_jvmti->GetMethodModifiers(frame[1].method,&access_flags);
 	//printf("calling met: %s access flags: %d \n",methodName2, access_flags);
 	// flags == 9
-	if (access_flags & 8 != 0) {
+	if ((access_flags & 8) != 0) {
 	  jclass declaring_class;
 	  char *source_name;
 	  jvmtiError error = g_jvmti->GetMethodDeclaringClass(frame[1].method,&declaring_class);
@@ -522,7 +522,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_newObj
 	  //printf("calling met: %s access flags: %d \n",methodName2, access_flags);
 	  // flags == 9
 	  
-	  if (access_flags & 8 != 0) {
+	  if ((access_flags & 8) != 0) {
 	    jclass declaring_class;
 	    char *source_name;
 	    jvmtiError error = g_jvmti->GetMethodDeclaringClass(frame[0].method,&declaring_class);
