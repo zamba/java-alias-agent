@@ -5,24 +5,26 @@ import java.util.LinkedList;
 
 
 public class AddMethodEnterAdapter extends AdviceAdapter {
-    
-    private boolean debug = false;
-    private boolean visitLocals = true;
 
     private String met;
     private String des;
     private String klass;
-    private int acc;
-    private int newObj = 0;
 
+    boolean isMetStatic = false;
+
+    private int newObj = 0;
     private String[] currentArr = null;
 
-    int listIndex;
-    
-    boolean isMetStatic = false;
-    boolean problem = false;
+    boolean methodEnter = false;
+    boolean methodExit = false;
 
-    LinkedList<Integer> l = new LinkedList<Integer>();
+    boolean storeVar = false;
+    boolean newObjs = false;
+
+    boolean fieldUse = true;
+    boolean putField = true;
+
+    boolean disableAll = false;
 
     protected AddMethodEnterAdapter(int access, String name, String desc,
 				 MethodVisitor mv, String owner) {
@@ -31,13 +33,9 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	des = desc;
 	klass = owner;	
 	isMetStatic = isStatic(methodAccess);
+	
+	// System.out.println("ASM Instrumenting Method: " + desc + " " + name);
 
-	if (debug)
-	    System.out.println("ASM Instrumenting Method: " + desc + " " + name);
-	//System.out.println("ASM Instrumenting Method: " + desc + " " + name);
-	problem = klass.equals("org/dacapo/parser/Config$Size") && met.equals("<init>") && false;
-	// System.out.println(access + " " + methodAccess + " " + methodDesc);
-	//System.out.println(owner + " " + name);
     }
 
     boolean isStatic(int access) {
@@ -48,14 +46,6 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 /* NEW NEWARRAY ANEWARRAY MULTIANEWARRAY                                      */
 /******************************************************************************/
 
-    public void visitEnd() {
-	if (debug)
-	    System.out.println("ASM done instrumenting Method: "+ des + " "  + met );
-	if (problem)
-	    System.out.println("visitEnd");
-	//System.out.println("ASM done instrumenting Method: "+ des + " "  + met );
-	mv.visitEnd();
-    }
 
     public void insertThisOrStatic() {
 	if (met.equals("<init>")) {
@@ -63,8 +53,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	    push((String)null);
 	    return;
 	}
-	if (debug)
-	    System.out.println("ASM insertThisOrStatic: "+ des + " "  + met );
+
 	if (isMetStatic) {
 	    mv.visitLdcInsn(klass);
 	}
@@ -78,8 +67,6 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	else {
 	    loadThis();
 	}
-	if (debug)
-	    System.out.println("ASM insertThisOrStatic: "+ des + " "  + met );
     }
 
     private void insertThreadAndNew() {
@@ -111,12 +98,10 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
     public void visitTypeInsn(int opcode,
 			      String type) {
-	if (problem)
-	    System.out.println("visitTypeInsn opcode:" + opcode + " " + type);
-
-
-
-
+	if (!newObjs || disableAll) {
+	    super.visitTypeInsn(opcode,type);
+	    return;
+	}
 	if (opcode == NEW) {
 	    newObj++;
 	    if (currentArr != null) {
@@ -135,7 +120,6 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
 	if (opcode == ANEWARRAY) {
 	    insertNewCode(type);
-	    // System.out.println("anewarray " + type);
 	}
     }
 
@@ -145,59 +129,17 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 				String owner,
 				String name,
 				String desc) {
+	if (!newObjs || disableAll) {
+	    super.visitMethodInsn(opcode,owner,name,desc);
+	    return;
+	}
 
-	// if (name.equals("invoke")) {
-	//     System.out.println(opcode + " || " +  klass + "." + met + "()" + " calling " + owner + "." + name + desc);
-	// }
-	if (problem)
-	    System.out.println("visitMethodInsn opcode:" + opcode + " "+ owner + " " + name + " " + desc);
-	if (debug)
-	    System.out.println("ASM visitMet: "+ des + " "  + met );
-
-
-	    // System.out.println("visitMethodInsn opcode:" + opcode + " "+ owner + " " + name + " " + desc);
-	
-	// String xy = name;
-	// int len = xy.length();
-	// if (len == 0) {
-	//     System.out.println("xy = 0");
-	// }
-	// else {
-	//     if (xy.charAt(0) == 'L' && xy.charAt(len-1) == ';') {
-	// 	System.out.println(xy);	    
-	//     }
-	// }
-
-
-
-
-
-	// if (met.equals("<init>") && des.equals("()V")) {
-	//     System.out.println("ALIVEeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
-	// }
-	// if (met.equals("<init>") && des.equals("()V")) {
-	//     System.out.println("ALIVEeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
-	// }
-
-	// SUPER!?!?
-	// System.out.println("visitMethodInsn opcode:" + opcode + " "+ owner + " " + name + " " + desc);
 	super.visitMethodInsn(opcode,owner,name,desc);
-
-
-       // 	if (name.equals("<init>") && newObj > 0) {
-       // 	    System.out.println("INIT : " + owner + " " + name + " " + desc);
-       // 	}
-       // System.out.println("Inside : " + met + " " + owner + " " + name + " " + desc);
-	// if (name.equals("<init>") && met.equals("<init>")) {
-	//     System.out.println("initfrominit");
-	// }
  
 	if (name.equals("<init>")  &&
 	    currentArr != null &&
 	    newObj > 0 &&
 	    owner.equals(currentArr[newObj-1])) {
-
-	    // System.out.println(owner + " " + met  +  " " + newObj + " " + currentArr.length);
 
 	    newObj--;
 	    if (currentArr.length == 1) {
@@ -206,23 +148,22 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	    else {
 		currentArr = Arrays.copyOf(currentArr,currentArr.length-1);
 	    }
-
 	    push(owner);
 	    swap();
 	    insertThisOrStatic();
 	    insertThreadAndNew();
-
 	}
-	if (debug)
-	    System.out.println("ASM visitMet: "+ des + " "  + met );
 
     }
 
 
     public void visitIntInsn(int opcode,
 			     int operand) {
-	if (problem)
-	    System.out.println("visit int insn:" + opcode + " " + operand);
+	if (!newObjs || disableAll) {
+	    super.visitIntInsn(opcode,operand);
+	    return;
+	}
+
 	super.visitIntInsn(opcode,operand);
 	if (opcode == NEWARRAY) {
 	    String result = null;
@@ -250,10 +191,11 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
     public void visitMultiANewArrayInsn(String desc,
 					int dims) {
-	if (problem)
-	    System.out.println("visitmulti opcode:" + desc);
+	if (!newObjs || disableAll) {
+	    super.visitMultiANewArrayInsn(desc,dims);
+	    return;
+	}
 	super.visitMultiANewArrayInsn(desc,dims);
-	if (!problem)
 	insertNewCode(desc);
     }
 
@@ -261,19 +203,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 /******************************************************************************/
 /* store/load var                                                             */
 /******************************************************************************/
-    
-    private boolean addASTORE(int var) {
-	boolean exist = false;
-	for (Integer i : l) {
-	    if (i.intValue() == var) {
-		exist = true;
-	    }
-	}
-	if (!exist) {
-	    l.add(var);
-	}
-	return !exist;
-    }
+
 
 
     /*
@@ -285,15 +215,13 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
      */
     @Override public void visitVarInsn(int opcode,
 				       int var) {
-	//boolean isNewVar = addASTORE(var);
-
+	if (!storeVar || disableAll) {
+	    super.visitVarInsn(opcode,var);
+	    return;
+	}
 	if (opcode == ASTORE) {
-
-	    boolean isNewVar = addASTORE(var);
-	    // result is true if this was the first ASTORE to var
-
 	    dup(); // #1
-	    if (isNewVar || true) {
+	    if (true) {
 		push((String)null); //#2
 	    }
 	    else {
@@ -373,11 +301,11 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     			       String owner,
     			       String name,
     			       String desc) {
-	if (true) {
-	    
+	if (!fieldUse || disableAll) {
 	    super.visitFieldInsn(opcode,owner,name,desc);
 	    return;
 	}
+
 
     	char fc = desc.charAt(0);
 	if (name.equals("this$0")) {
@@ -386,84 +314,118 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	}
 
 
-    	if (opcode == PUTFIELD || opcode == GETFIELD || opcode == PUTSTATIC) {
-    	    if (opcode == PUTFIELD) {
-    		//stack objref value
 
-    		// value is object or array
-    		if (fc == 'L' || fc == '[') {
-    		    dup2(); // #1,2 callee value
-    		}
-    		// value is long or double
-    		else if (fc == 'J' || fc == 'D') {
-    		    dup2X1();
-    		    pop2();
-		    dupX2();
-    		    push((String)null);
-    		}
-    		// value is primitive
-    		else {
-    		    dup2();
-    		    pop();
-    		    push((String)null);		  
-    		}
 
-    		//stack objref value objref (obj/arr/null)
 
-    		if(fc == 'L' || fc == '[') {
-    		    dup2();
-    		    //stack objref value objref (obj/arr/null) objref (obj/arr/null)
-    		    pop();
-    		    //stack objref value objref (obj/arr/null) objref
-    		    mv.visitFieldInsn(GETFIELD,owner,name,desc);
-    		    //stack objref value objref (obj/arr/null) oldvalue
-    		}
-    		else {
-    		    push((String)null);
-    		}
-    		//stack objref value objref (obj/arr/null) (oldvalue/null)
-    		push(owner);                         // #4
-    		push(name);                          // #5
-    		push(desc);                          // #6
-    		insertThisOrStatic();
-    		addThreadAndField(1);
-    	    }
-    	    else if (opcode == PUTSTATIC) {
-    		if (fc == 'L' || fc == '[') {
-    		    dup(); // #1,2 callee value
-    		}
-    		else {
-    		    push((String)null);
-    		}
-    		push((String)null);
-    		swap();
 
-    		if(fc == 'L' || fc == '[') {
-    		    mv.visitFieldInsn(GETSTATIC,owner,name,desc);
-    		}
-    		else {
-    		    push((String)null);
-    		}
+	if (opcode == PUTFIELD && putField) {
+	if (owner.equals("org/sunflow/core/LightServer$1") && met.equals("<init>")) {
+	    System.out.println("Putfield: " + name + " " + desc);
+	    
+	}
 
-    		push(owner);                         // #4
-    		push(name);                          // #5
-    		push(desc);                          // #6
-    		insertThisOrStatic();                // #7-8
-    		addThreadAndField(1);                // # 9
-    	    }
-    	    else if (opcode == GETFIELD) {
-    		//objref
-    		dup();
-    		//objref objref
-    	    }
-    	}
+	    //stack: objref value |
+
+	    // value is object or array
+	    if (fc == 'L' || fc == '[') {
+		dup2();
+	    //stack: objref value | objref value
+	    }
+	    // value is long or double
+	    else if (fc == 'J' || fc == 'D') {
+
+		dup2X1();
+		//stack: value | objref value
+		pop2();
+		//stack: value | objref
+		dupX2();
+		//stack: objref value | objref
+		push((String)null);
+		//stack: objref value | objref null		
+	    }
+	    // value is primitive
+	    else {
+		dup2();
+		//stack: objref value | objref value
+		pop();
+		//stack: objref value | objref	
+		push((String)null);
+		//stack: objref value | objref null
+	    }
+
+
+	    //stack: objref value | objref (obj/arr/null)
+	    // if (name.equals("this$0")) {
+	    // 	push((String)null);    
+	    // }
+	    // else
+		if(fc == 'L' || fc == '[') {
+	    	dup2();
+	    	//stack objref value | objref (obj/arr/null) objref (obj/arr/null)
+	    	pop();
+	    	//stack objref value | objref (obj/arr/null) objref
+	    	mv.visitFieldInsn(GETFIELD,owner,name,desc);
+	    	//stack objref value | objref (obj/arr/null) oldvalue
+	    }
+	    else {
+	    	push((String)null);
+	    }
+
+	    //stack: objref value | objref (obj/arr/null) (oldvalue/null)
+	    push(owner);                         // #4
+	    push(name);                          // #5
+	    push(desc);                          // #6
+	    insertThisOrStatic();
+	    addThreadAndField(1);
+	}
+
+
+	else if (opcode == PUTSTATIC) {
+	    if (fc == 'L' || fc == '[') {
+		dup(); // #1,2 callee value
+	    }
+	    else {
+		push((String)null);
+	    }
+	    push((String)null);
+	    swap();
+
+	    if(fc == 'L' || fc == '[') {
+		mv.visitFieldInsn(GETSTATIC,owner,name,desc);
+	    }
+	    else {
+		push((String)null);
+	    }
+
+	    push(owner);                         // #4
+	    push(name);                          // #5
+	    push(desc);                          // #6
+	    insertThisOrStatic();                // #7-8
+	    addThreadAndField(1);                // # 9
+	}
+
+
+
+
+
+	else if (opcode == GETFIELD) {
+	    //objref |
+	    dup();
+	    //objref | objref
+	}
+
+
+
     	super.visitFieldInsn(opcode,owner,name,desc);
+
+
+
     	//getfield objref -> value
     	if (opcode == GETFIELD) {
     	    //objref value
     	    if (fc == 'L' || fc == '[') {
     		dupX1();
-    		//value objref value
+    		//value | objref value
     	    }
     	    // value is long or double
     	    else if (fc == 'J' || fc == 'D') {
@@ -489,6 +451,9 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     	    addThreadAndField(0);
 	    
     	}
+
+
+
     	else if (opcode == GETSTATIC) {
     	    push((String)null);
     	    if (fc == 'L' || fc == '[') {
@@ -513,8 +478,10 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
     @Override protected void onMethodExit(int opcode) {
 	// System.out.println("ASM onMetExit: "+ des + " "  + met );
-	// if (true)
-	//     return;
+	if (!methodExit || disableAll) {
+	    return;
+	}
+	
 	if (opcode == ATHROW) {
 	    
 	    return;
@@ -532,22 +499,8 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	push(des); // #3
 	insertThisOrStatic(); // #4,5
 
-
-	if (l.size() > 0 && false) {
-	    mv.visitIntInsn(BIPUSH,l.size());
-	    mv.visitTypeInsn(ANEWARRAY,"java/lang/Object"); // #6
-	    int index = 0;
-	    for (Integer i : l) {
-	    	mv.visitInsn(DUP);
-	    	mv.visitIntInsn(BIPUSH,index++);
-	    	mv.visitVarInsn(ALOAD,i.intValue());
-	    	mv.visitInsn(AASTORE);
-	    }
-	}
-
-	else {
-	    push((String)null); // #6
-	}
+	// todo make a new array with out of scopes
+	push((String)null); // #6
 	
 	mv.visitMethodInsn(INVOKESTATIC,
 			   "java/lang/Thread",
@@ -575,8 +528,10 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	* The current thread
      */
     @Override protected void onMethodEnter() {
-	// if (true)
-	//     return;
+	if (!methodEnter || disableAll) {
+	    return;
+	}
+
 
     	int parametersCounter = countParameters();
     	int[] parameters;
@@ -585,21 +540,18 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	mv.visitLdcInsn(des);          // #2
 	insertThisOrStatic();          // #3-4
 
-	// System.out.println("met enter: ("+ acc + ") " + 
-	// 		   klass + " " + met + " " + des +
-	// 		   " parCounter" + parametersCounter);
 
-	if (debug)
-	    System.out.println("ASM onMetEnter: "+ des + " "  + met );
+
+
 
 	if (parametersCounter > 0) {
 	    parameters = new int[parametersCounter];
 	    fillParameters(parameters);
-	    if (met.equals("<init>") && klass.equals("org/python/core/PyJavaType$1")) {
-		System.out.println(met + " " + des);
-		System.out.println(parametersCounter + " " + Arrays.toString(parameters));
-		System.out.println(acc);
-	    }
+	    // if (met.equals("<init>") && klass.equals("org/sunflow/core/LightServer$1")) {
+	    // 	System.out.println(met + " " + des);
+	    // 	System.out.println(parametersCounter + " " + Arrays.toString(parameters));
+	    // }
+
 
 	    mv.visitIntInsn(BIPUSH,parameters.length);
 	    mv.visitTypeInsn(ANEWARRAY,"java/lang/Object"); // #5

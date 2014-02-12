@@ -56,7 +56,6 @@ bool method_call(list<Event *> list)
       if ((*it)->getType() == 4)
 	nr++;
     }
-    cout << to_string(nr) << endl;
     if (nr == 12)
       return true;
 
@@ -68,7 +67,7 @@ bool returned(list<Event *> list)
 {
   int nr = 0;
     for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
-      if ((*it)->getType() == 7)
+      if ((*it)->getType() == 6)
 	nr++;
     }
 
@@ -86,7 +85,7 @@ bool variable_store(list<Event *> list)
 {
   int nr = 0;
     for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
-      if ((*it)->getType() == 9)
+      if ((*it)->getType() == 7)
 	nr++;
     }
     if (nr == 4)

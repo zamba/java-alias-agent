@@ -60,6 +60,7 @@ class GetField : public Event {
 	   unsigned long argcaller,
 	   unsigned long argcallee,
 	   unsigned long value);
+  ~GetField();
   string toString();
 };
 
@@ -88,6 +89,7 @@ class StoreField : public Event {
 	     unsigned long argcallee,
 	     unsigned long value,
 	     unsigned long oldvalue);
+  ~StoreField();
   string toString();
 };
 
@@ -114,6 +116,7 @@ class MethodCall : public Event {
 	     unsigned long aobjcaller,
 	     unsigned long *args,
 	     int argcount);
+  ~MethodCall();
   string toString();
 };
 
@@ -155,6 +158,7 @@ class Returned : public Event {
 	   unsigned long target,
 	   unsigned long *outobjs,
 	   int counter);
+  ~Returned();
 	   
   string toString();
 };

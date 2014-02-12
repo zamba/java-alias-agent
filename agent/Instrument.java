@@ -1,5 +1,8 @@
 import org.objectweb.asm.*;
 import org.objectweb.asm.util.*;
+import java.io.StringWriter;
+import java.io.PrintWriter;
+
 
 
 public class Instrument {
@@ -9,13 +12,7 @@ public class Instrument {
 	ClassWriter cw = new MyClassWriter(cr,ClassWriter.COMPUTE_MAXS);
 	AddMethodAdapter ca = new AddMethodAdapter(cw);
 
-	// AddMethodAdapter ca = new AddMethodAdapter(new CheckClassAdapter(cw));
 
-	
-	// StringWriter sw = new StringWriter();
-	// PrintWriter pw = new PrintWriter(sw);
-	// CheckClassAdapter.verify(new ClassReader(cw.toByteArray()), false, pw);
-	// assertTrue(sw.toString(), sw.toString().length()==0);
 
 
 	cr.accept(ca, ClassReader.EXPAND_FRAMES);

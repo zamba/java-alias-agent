@@ -66,6 +66,15 @@ GetField::GetField(string fieldname,
   value = avalue;
 }
 
+GetField::~GetField() {
+  delete &field;
+  delete &description;
+
+    delete &static_caller;
+
+  delete &static_callee;
+}
+
 
 string GetField::toString() {
   string fa = 
@@ -108,20 +117,28 @@ StoreField::StoreField(string fieldname,
   old_value = oldvalue;
 }
 
+StoreField::~StoreField() {
+
+}
+
 
 string StoreField::toString() {
-  string fm =
-    "StoreField:" +
-    field +
-    "(" + description + ")" +
-    " caller:" +
-    ((static_caller.compare("") != 0) ? static_caller : to_string(caller)+ "\t") +
-    " \tcallee:" +
-    ((static_callee.compare("") != 0) ? static_callee : to_string(callee)) +
-    " \tvalue:" +
-    ((value != 0) ? to_string(value) : "-") +
-      " \toldValue:" +
-    to_string(old_value);
+  // string fm =
+  //   "StoreField:" +
+  //   field +
+  //   "(" + description + ")" +
+  //   " caller:" +
+  //   ((static_caller.compare("") != 0) ? static_caller : to_string(caller)+ "\t") +
+  //   " \tcallee:" +
+  //   ((static_callee.compare("") != 0) ? static_callee : to_string(callee)) +
+  //   " \tvalue:" +
+  //   ((value != 0) ? to_string(value) : "-") +
+  //     " \toldValue:" +
+  //   to_string(old_value);
+
+  std::string fm;
+  fm.append("storefield: ");
+  fm.append(field);
   return fm;
 }
 
@@ -146,6 +163,11 @@ MethodCall::MethodCall(string met,
   objcaller = aobjcaller;
   args = aargs;
   arg_count = aargcount;
+}
+
+
+MethodCall::~MethodCall() {
+  delete args;
 }
 
 
@@ -176,7 +198,7 @@ string MethodCall::toString() {
 /******************************************************************************/
 
 Deallocation::Deallocation(unsigned long argtarget) 
-  : Event(6) {
+  : Event(5) {
   target = argtarget;
 }
 
@@ -198,7 +220,7 @@ Returned::Returned(string method,
 		   unsigned long atarget,
 		   unsigned long *aoutobjs,
 		   int acounter) 
-  : Event(7)
+  : Event(6)
 {
   met = method;
   desc = description;
@@ -209,6 +231,10 @@ Returned::Returned(string method,
   target = atarget;
   outobjs = aoutobjs;
   counter = acounter;
+}
+
+Returned::~Returned() {
+  delete outobjs;
 }
 
 string Returned::toString() {
@@ -241,7 +267,7 @@ StoredVar::StoredVar(string amet,
 		     unsigned long acallee,
 		     unsigned long astored,
 		     unsigned long aold)
-  : Event(9) {
+  : Event(7) {
   met = amet;
   desc = adesc;
   static_callee = astatic_callee;
@@ -273,7 +299,7 @@ string StoredVar::toString() {
 void printList(list<Event*> list, int outputMethod, const char *filename) {
   if (outputMethod == 0) {
     for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
-      cout << (*it)->toString() << endl;
+      cout << (*it)->toString() << "\n";
       //cout << (*it)->getType() << endl;
     }
   }
@@ -282,7 +308,7 @@ void printList(list<Event*> list, int outputMethod, const char *filename) {
     ofstream myfile;
     myfile.open (filename);
     for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
-      myfile << (*it)->toString() << endl;
+      myfile << (*it)->toString() << "\n";
       // cout << (*it)->getType();
     }
     myfile.close();
