@@ -6,7 +6,7 @@ import org.cliffc.high_scale_lib.NonBlockingHashMap;
 public class Utils {
     private static volatile long counter = 0; 
     private static final NonBlockingHashMap<String,Long> stringToLong = new NonBlockingHashMap<String,Long>();
-    private static final NonBlockingHashMap<String,Long> stringToString = new NonBlockingHashMap<String,String>();
+    private static final NonBlockingHashMap<String,String> stringToString = new NonBlockingHashMap<String,String>();
 
     public static long stringToLong(final String string) {
 	final Long shorthand = stringToLong.get(string);
@@ -19,10 +19,10 @@ public class Utils {
     }
 
     public static String stringToString(final String string) {
-	String shorthand = stringToLong.get(string);
+	String shorthand = stringToString.get(string);
 	if (shorthand == null) {
 	    shorthand = "" + ++Utils.counter; // UGLY HACK!!!
-	    stringToLong.put(string, shorthand); 
+	    stringToString.put(string, shorthand); 
 	}
 	return shorthand;
     }

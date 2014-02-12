@@ -1,4 +1,6 @@
 UNAME = $(shell uname)
+BCP = -Xbootclasspath/p:lib/java_util_hashtable.jar 
+JLIB = -cp lib/java_util_hashtable.jar:.
 
 ifeq ($(UNAME),Linux)
 	CC = g++
@@ -14,7 +16,7 @@ ifeq ($(UNAME),Darwin)
 endif
 
 all:
-	@javac  *.java
+	@javac  $(JLIB) *.java
 	@javah NativeInterface
 	@$(CC) -std=c++11 -o ninja ninja.cpp
 	@$(CC) -c -fPIC -std=c++11 $(LIBS) $(IFLAGS) alias.cpp eventlist.cpp test.cpp
@@ -22,12 +24,12 @@ all:
 
 test:
 	@javac -d . test/*.java
-	@java -agentpath:./testagent.so=test,1 test/Allocation
-	@java -agentpath:./testagent.so=test,2 test/FieldStore
-	@java -agentpath:./testagent.so=test,3 test/FieldLoad
-	@java -agentpath:./testagent.so=test,4 test/MethodEnter
-	@java -agentpath:./testagent.so=test,5 test/MethodExit
-	@java -agentpath:./testagent.so=test,6 test/VarStore
+	@java $(BCP) -agentpath:./testagent.so=test,1 test/Allocation
+	@java $(BCP) -agentpath:./testagent.so=test,2 test/FieldStore
+	@java $(BCP) -agentpath:./testagent.so=test,3 test/FieldLoad
+	@java $(BCP) -agentpath:./testagent.so=test,4 test/MethodEnter
+	@java $(BCP) -agentpath:./testagent.so=test,5 test/MethodExit
+	@java $(BCP) -agentpath:./testagent.so=test,6 test/VarStore
 
 jartest:
 	@jar cvfe jartest.jar Test Test.class Foo.class Zolo.class Yolo.class
