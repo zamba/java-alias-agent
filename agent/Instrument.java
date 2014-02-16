@@ -8,6 +8,8 @@ import java.io.PrintWriter;
 public class Instrument {
 
     public static byte[] transform(byte[] b1) {
+	// if (true)
+	//     return b1;
 	ClassReader cr = new ClassReader(b1);
 	ClassWriter cw = new MyClassWriter(cr,ClassWriter.COMPUTE_MAXS);
 	AddMethodAdapter ca = new AddMethodAdapter(cw);

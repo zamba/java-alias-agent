@@ -40,6 +40,7 @@ public class AddMethodAdapter extends ClassVisitor implements Opcodes {
     	isInterface = (access & ACC_INTERFACE) != 0;
 
 	isAnonymous = isAnonymous(name);
+
 	// System.out.println("\n\nASM Instrumenting Class: " + signature + " " + name);
     }
 
@@ -51,7 +52,6 @@ public class AddMethodAdapter extends ClassVisitor implements Opcodes {
     @Override public MethodVisitor visitMethod(int access, String name,
     					       String desc, String signature, String[] exceptions) {
     	MethodVisitor mv = cv.visitMethod(access, name, desc, signature,exceptions);
-
 
 
     	if ((access & ACC_DEPRECATED) != 0)
@@ -69,6 +69,9 @@ public class AddMethodAdapter extends ClassVisitor implements Opcodes {
 	if (isAnonymous && name.equals("<init>")) {
 	    return mv;
 	}
+
+
+	
 
     	else if (!isInterface && mv != null ) {
     	    mv = new AddMethodEnterAdapter(access,name,desc,mv,owner);

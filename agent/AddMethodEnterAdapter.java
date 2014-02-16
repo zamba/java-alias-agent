@@ -22,7 +22,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     boolean newObjs = false;
 
     boolean fieldUse = true;
-    boolean putField = true;
+
 
     boolean disableAll = false;
 
@@ -33,8 +33,8 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	des = desc;
 	klass = owner;	
 	isMetStatic = isStatic(methodAccess);
-	
-	// System.out.println("ASM Instrumenting Method: " + desc + " " + name);
+	// if (owner.equals("org/dacapo/harness/Eclipse"))
+	//     System.out.println("ASM Instrumenting Method: " + owner + " " + name);
 
     }
 
@@ -301,11 +301,51 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     			       String owner,
     			       String name,
     			       String desc) {
+
+	
 	if (!fieldUse || disableAll) {
 	    super.visitFieldInsn(opcode,owner,name,desc);
 	    return;
 	}
 
+
+	    
+	// if (klass.equals("org/dacapo/harness/Eclipse")) {
+	//     // System.out.println(klass + "wwww " + met);
+	//     if (opcode == PUTFIELD) {
+	// 	System.out.println("Putfield: " + name + " " + desc);
+	//     }
+	//     else if (opcode == PUTSTATIC){
+	// 	System.out.println("Putstatic: " + name + " " + desc);
+	//     }
+	//     else if (opcode == GETSTATIC) {
+	// 	System.out.println("Getstatic: " + name + " " + desc);
+	//     }
+	//     else {
+	// 	System.out.println("Getfield: " + name + " " + desc);
+	//     }
+	    
+	// }
+
+
+
+
+	// if (desc.equals("Ljava/lang/reflect/Method;") ||
+	//     name.equals("OSGI_BOOTSTRAP_JAR") ||
+	//     desc.equals("Ljava/lang/ClassLoader;")
+	//     ) {
+	//     // System.out.println("not instrumenting " + name);
+	//     super.visitFieldInsn(opcode,owner,name,desc);
+	//     return;
+	// }
+
+	if (desc.equals("Ljava/lang/Class;") ||
+	    desc.equals("Ljava/lang/reflect/Method;") || 
+	    met.equals("<init>") ||
+	    met.equals("<clinit>")) {
+		super.visitFieldInsn(opcode,owner,name,desc);
+		return;
+	    }
 
     	char fc = desc.charAt(0);
 	if (name.equals("this$0")) {
@@ -318,11 +358,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
 
 
-	if (opcode == PUTFIELD && putField) {
-	if (owner.equals("org/sunflow/core/LightServer$1") && met.equals("<init>")) {
-	    System.out.println("Putfield: " + name + " " + desc);
-	    
-	}
+	if (opcode == PUTFIELD) {
 
 	    //stack: objref value |
 
@@ -454,7 +490,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
 
 
-    	else if (opcode == GETSTATIC) {
+    	else if (opcode == GETSTATIC ) {
     	    push((String)null);
     	    if (fc == 'L' || fc == '[') {
     		dup();

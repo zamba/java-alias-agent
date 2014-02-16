@@ -31,7 +31,7 @@ const char *filename = "output";
 
 FILE * pFile = stdout;
 
-bool writeToFile = false;
+bool writeToFile = true;
 
 /******************************************************************************/
 /* Global Data                                                                */
@@ -261,7 +261,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_loadField
 	jlong new_val = get_tag(value);
 	const char *c_name = env->GetStringUTFChars(name, NULL);
 	const char *c_desc = env->GetStringUTFChars(desc, NULL);
-	fprintf(pFile,"3 %s(%s) %ld ",c_name,c_desc,new_val);
+	fprintf(pFile,"2 %s(%s) %ld ",c_name,c_desc,new_val);
 	env->ReleaseStringUTFChars(name, c_name);
 	env->ReleaseStringUTFChars(desc, c_desc);
 
