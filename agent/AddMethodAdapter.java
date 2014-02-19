@@ -6,6 +6,8 @@ public class AddMethodAdapter extends ClassVisitor implements Opcodes {
     private boolean isInterface;
     private boolean isAnonymous;
 
+    private boolean isSynthetic;
+
 
     public AddMethodAdapter(ClassVisitor cv) {
     	super(ASM4, cv);
@@ -27,9 +29,13 @@ public class AddMethodAdapter extends ClassVisitor implements Opcodes {
 	}
 	catch (NumberFormatException e) {
 	    return false;
-	}
-	
-	
+	}	
+    }
+
+
+    private boolean isSynthetic(String superName) {
+	//return (superName.indexOf('$') != -1);
+	return (superName.indexOf("Enum") != -1);
     }
 
     @Override public void visit(int version, int access, String name,
@@ -40,7 +46,7 @@ public class AddMethodAdapter extends ClassVisitor implements Opcodes {
     	isInterface = (access & ACC_INTERFACE) != 0;
 
 	isAnonymous = isAnonymous(name);
-
+	isSynthetic = isSynthetic(superName);
 	// System.out.println("\n\nASM Instrumenting Class: " + signature + " " + name);
     }
 
@@ -67,6 +73,9 @@ public class AddMethodAdapter extends ClassVisitor implements Opcodes {
 	
 
 	if (isAnonymous && name.equals("<init>")) {
+	    return mv;
+	}
+	if (isSynthetic) {
 	    return mv;
 	}
 

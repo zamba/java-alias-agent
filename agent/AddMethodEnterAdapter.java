@@ -291,11 +291,6 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     /*
       Inserting methodcalls to callbacks
       GETSTATIC, PUTSTATIC, GETFIELD, PUTFIELD
-
-      TODO(low prio):
-         high prio. if the desc[0] is != L | [, then dont get oldvalue nor value
-      TODO(low prio):
-         rewrite this method to make it more readable
     */
     public void visitFieldInsn(int opcode,
     			       String owner,
@@ -304,6 +299,11 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
 	
 	if (!fieldUse || disableAll) {
+	    super.visitFieldInsn(opcode,owner,name,desc);
+	    return;
+	}
+
+	if (name.indexOf('$') != -1) {
 	    super.visitFieldInsn(opcode,owner,name,desc);
 	    return;
 	}
@@ -339,13 +339,13 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	//     return;
 	// }
 
-	if (desc.equals("Ljava/lang/Class;") ||
-	    desc.equals("Ljava/lang/reflect/Method;") || 
-	    met.equals("<init>") ||
-	    met.equals("<clinit>")) {
-		super.visitFieldInsn(opcode,owner,name,desc);
-		return;
-	    }
+	// if (desc.equals("Ljava/lang/Class;") ||
+	//     desc.equals("Ljava/lang/reflect/Method;") || 
+	//     met.equals("<init>") ||
+	//     met.equals("<clinit>")) {
+	// 	super.visitFieldInsn(opcode,owner,name,desc);
+	// 	return;
+	//     }
 
     	char fc = desc.charAt(0);
 	if (name.equals("this$0")) {

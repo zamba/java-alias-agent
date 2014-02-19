@@ -16,7 +16,7 @@ public class Instrument {
 
 
 
-
+	//ClassReader.SKIP_FRAMES;
 	cr.accept(ca, ClassReader.EXPAND_FRAMES);
 	byte[] b2 = cw.toByteArray();
 	return b2;

@@ -1,5 +1,5 @@
 UNAME = $(shell uname)
-BCP = -Xbootclasspath/p:lib/java_util_hashtable.jar 
+BCP = -Xbootclasspath/p:lib/java_util_hashtable.jar:/home/erik/java-alias-agent/agent
 JLIB = -cp lib/java_util_hashtable.jar:.
 
 ifeq ($(UNAME),Linux)
@@ -35,6 +35,10 @@ jartest:
 	@jar cvfe jartest.jar Test Test.class Foo.class Zolo.class Yolo.class
 	@java  -agentpath:./testagent.so -jar jartest.jar
 
+foo:
+	javac Foo.java
+	java  -agentpath:./testagent.so Foo
+
 bench:
 #avrora batik eclipse fop h2 jython luindex lusearch pmd sunflow tomcat tradebeans tradesoap xalan
 #completes and passes:			pmd
@@ -44,7 +48,7 @@ bench:
 #register#1 contains wrong type: 	jython
 #register#2 contains wrong type: 	sunflow tomcat
 #????					tradebeans tradesoap
-	java -agentpath:./testagent.so -jar ~/Desktop/dacapo-9.12-bach.jar pmd
+	java -agentpath:./testagent.so -jar ~/Desktop/dacapo-9.12-bach.jar eclipse
 
 clean:
 	@rm -f *.class
@@ -58,5 +62,6 @@ clean:
 	@rm -f *.log
 	@rm -f jartest.jar
 	@rm -rf scratch
+	@rm -rf test.gzip
 
-.PHONY: clean test bench
+.PHONY: clean test bench jartest
