@@ -55,6 +55,14 @@ JNIEXPORT void JNICALL Java_NativeInterface_loadField
 JNIEXPORT void JNICALL Java_NativeInterface_storeVar
   (JNIEnv *, jclass, jobject, jobject, jstring, jstring, jstring, jobject, jobject);
 
+/*
+ * Class:     NativeInterface
+ * Method:    empty
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_NativeInterface_empty
+  (JNIEnv *, jclass);
+
 #ifdef __cplusplus
 }
 #endif

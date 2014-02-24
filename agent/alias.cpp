@@ -112,7 +112,10 @@ jlong get_tag(jobject obj) {
 /* Event Callbacks                                                            */
 /******************************************************************************/
 
-
+JNIEXPORT void JNICALL Java_NativeInterface_empty
+(JNIEnv *, jclass) {
+  printf("\n\nCALL TO EMPTY() in c++, from JAVA\n\n");
+}
 
 /* 
    TODO:
@@ -669,14 +672,14 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
 		  jint* new_class_data_len,
 		  unsigned char** new_class_data) 
 {
-
+  
     if (!class_data || !name) {
       return;
     }
     if(!g_init || g_dead || !loader) {
       return;
     }
-
+    
     // Avoid transformation of instrument classes
     const char *result = strstr(name,"org/objectweb/asm/");
     if(result
@@ -687,8 +690,18 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
       return;
     }
 
+    
+    static int counter = 0;
+    counter++;
 
+    // int n = 359;
+    // // printf("c++ %d %s\n",counter,name);
+    // if(counter > n) {
+    //   if (counter == n + 1) { 
 
+    //   }
+    //   return;
+    // }
   enter_critical_section(); {
 
 
@@ -718,6 +731,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
       jni->DeleteLocalRef(new_barr);
       *new_class_data_len = len;
       *new_class_data = newclass;
+      // printf("done %d %s\n",counter,name);
       //printf("c++ done instrumenting: %s \n\n",name);
     }
     else {
@@ -877,7 +891,7 @@ Agent_OnLoad(JavaVM *vm,
     return JNI_ERR;
   }
 
-   jvmti->AddToSystemClassLoaderSearch(segment);
+   // jvmti->AddToSystemClassLoaderSearch(segment);
 
 
    

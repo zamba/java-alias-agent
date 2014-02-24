@@ -5,7 +5,7 @@ public class AddMethodAdapter extends ClassVisitor implements Opcodes {
     private String owner;
     private boolean isInterface;
     private boolean isAnonymous;
-
+    private int ver;
     private boolean isSynthetic;
 
 
@@ -42,15 +42,20 @@ public class AddMethodAdapter extends ClassVisitor implements Opcodes {
     				String signature, String superName, String[] interfaces) {
     	cv.visit(version, access, name, signature, superName, interfaces);
 	//System.out.println(name); class name
+	this.ver = version;
+	// System.out.println(version);
     	owner = name;
     	isInterface = (access & ACC_INTERFACE) != 0;
-
+	// if (name.equals("org/eclipse/equinox/internal/provisional/configurator/Configurator"))
+	// System.out.println("java " + name + " " + Integer.toBinaryString(access));
 	isAnonymous = isAnonymous(name);
 	isSynthetic = isSynthetic(superName);
 	// System.out.println("\n\nASM Instrumenting Class: " + signature + " " + name);
     }
 
-
+    int getVersion() {
+	return ver;
+    }
 
 
 
@@ -58,6 +63,22 @@ public class AddMethodAdapter extends ClassVisitor implements Opcodes {
     @Override public MethodVisitor visitMethod(int access, String name,
     					       String desc, String signature, String[] exceptions) {
     	MethodVisitor mv = cv.visitMethod(access, name, desc, signature,exceptions);
+
+
+	
+	// if (owner.equals("org/eclipse/equinox/internal/simpleconfigurator/SimpleConfiguratorImpl")) {
+	// 	if (name.equals("<init>") ||
+	// 	    name.equals("<clinit>") ||
+	// 	    name.equals("getConfigurationURL") ||
+	// 	    name.equals("applyConfiguration") ||
+	// 	    name.equals("isExclusiveInstallation") ||
+	// 	    name.equals("getUrlInUse") 
+		    
+	// 	    ) {
+	// 	    return mv;
+	// 	}
+
+	// }
 
 
     	if ((access & ACC_DEPRECATED) != 0)

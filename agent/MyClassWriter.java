@@ -8,14 +8,15 @@ public class MyClassWriter extends ClassWriter {
 
     protected String getCommonSuperClass(String type1,
 					 String type2) {
-	// ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
-	if (true) 
-	    return "java/lang/Object";
 
-	// Below is a copy of ClassWriter.getCommonSuperClass()
+	// if (true) 
+	//     return "java/lang/Object";
+
+
         Class<?> c, d;
-        ClassLoader classLoader = getClass().getClassLoader();
+        ClassLoader classLoader2 = getClass().getClassLoader();
+	ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
         try {
             c = Class.forName(type1.replace('/', '.'), false, classLoader);

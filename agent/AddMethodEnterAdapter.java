@@ -297,6 +297,8 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     			       String name,
     			       String desc) {
 
+
+
 	
 	if (!fieldUse || disableAll) {
 	    super.visitFieldInsn(opcode,owner,name,desc);
@@ -307,45 +309,37 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	    super.visitFieldInsn(opcode,owner,name,desc);
 	    return;
 	}
-
-
-	    
-	// if (klass.equals("org/dacapo/harness/Eclipse")) {
-	//     // System.out.println(klass + "wwww " + met);
-	//     if (opcode == PUTFIELD) {
-	// 	System.out.println("Putfield: " + name + " " + desc);
-	//     }
-	//     else if (opcode == PUTSTATIC){
-	// 	System.out.println("Putstatic: " + name + " " + desc);
-	//     }
-	//     else if (opcode == GETSTATIC) {
-	// 	System.out.println("Getstatic: " + name + " " + desc);
-	//     }
-	//     else {
-	// 	System.out.println("Getfield: " + name + " " + desc);
-	//     }
-	    
+	// String op;
+	// if (opcode == PUTFIELD) {
+	//     op = "PUTFIELD";
+	// }
+	// else if (opcode == GETFIELD) {
+	//     op = "GETFIELD";
+	// }
+	// else if (opcode == PUTSTATIC) {
+	//     op = "PUTSTATIC";
+	// }
+	// else if (opcode == GETSTATIC) {
+	//     op = "GETSTATIC";
+	// }
+	// else {
+	//     op = "OTHER";
 	// }
 
-
-
-
-	// if (desc.equals("Ljava/lang/reflect/Method;") ||
-	//     name.equals("OSGI_BOOTSTRAP_JAR") ||
-	//     desc.equals("Ljava/lang/ClassLoader;")
-	//     ) {
-	//     // System.out.println("not instrumenting " + name);
-	//     super.visitFieldInsn(opcode,owner,name,desc);
-	//     return;
-	// }
-
-	// if (desc.equals("Ljava/lang/Class;") ||
-	//     desc.equals("Ljava/lang/reflect/Method;") || 
-	//     met.equals("<init>") ||
-	//     met.equals("<clinit>")) {
+	// if (klass.equals("org/eclipse/equinox/internal/simpleconfigurator/SimpleConfiguratorImpl")) {
+	//     if (name.equals("bundle") ||
+	// 	name.equals("context") ||
+	// 	name.equals("configApplier") ||
+	// 	name.equals("configurationLock") ||
+	// 	name.equals("configurationURL")
+	// 	) {
+	// 	mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","empty","()V");
 	// 	super.visitFieldInsn(opcode,owner,name,desc);
 	// 	return;
 	//     }
+	//     System.out.println(op + " " + name);
+	// }
+
 
     	char fc = desc.charAt(0);
 	if (name.equals("this$0")) {

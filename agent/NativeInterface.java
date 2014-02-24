@@ -67,4 +67,6 @@ public class NativeInterface {
 	return 0;
     }
 
+    public static native void empty();
+
 }

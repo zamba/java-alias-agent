@@ -15,7 +15,8 @@ public class Instrument {
 	AddMethodAdapter ca = new AddMethodAdapter(cw);
 
 
-
+	int version = ca.getVersion();
+	// System.out.println(version);
 	//ClassReader.SKIP_FRAMES;
 	cr.accept(ca, ClassReader.EXPAND_FRAMES);
 	byte[] b2 = cw.toByteArray();

@@ -9,7 +9,7 @@ public class Test {
 
     public static void main(String[] args) throws Exception{
 	Foo foo = new Foo();
-	foo.enen();
+	foo.met();
     }
 
 }
@@ -18,47 +18,14 @@ public class Test {
 
 
 class Foo {
-    public class EnumTest {
-	Day day;
-    
-	public EnumTest(Day day) {
-	    this.day = day;
-	}
-    
-	public void tellItLikeItIs() {
-	    switch (day) {
-            case MONDAY:
-                System.out.println("Mondays are bad.");
-                break;
-                    
-            case FRIDAY:
-                System.out.println("Fridays are better.");
-                break;
-                         
-            case SATURDAY: case SUNDAY:
-                System.out.println("Weekends are best.");
-                break;
-                        
-            default:
-                System.out.println("Midweek days are so-so.");
-                break;
-	    }
+    private Object lock = new Object();
+    private int a = 34;
+    public void met() {
+	synchronized (lock) {
+	    if (a < 353)
+	    	System.out.println(a);
 	}
     }
-
-    public enum Day {
-	SUNDAY, MONDAY, TUESDAY, WEDNESDAY,
-	THURSDAY, FRIDAY, SATURDAY 
-    }
-
-    public void enen() {
-	EnumTest firstDay = new EnumTest(Day.MONDAY);
-        firstDay.tellItLikeItIs();
-        EnumTest thirdDay = new EnumTest(Day.WEDNESDAY);
-        thirdDay.tellItLikeItIs();
-    }
-	
-
 
 }
 
