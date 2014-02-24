@@ -1,0 +1,204 @@
+When running the bench like below:
+
+java -cp $DACAPO $LIBS -agentpath:./lib/testagent.so Harness $1 -s small
+
+... Avrora, tomcat and the trades are failing.
+
+
+* AVRORA
+** ERROR MESSAGE
+===== DaCapo 9.12 avrora starting =====
+Digest validation failed for stderr.log, expecting 0xda39a3ee5e6b4b0d3255bfef95601890afd80709 found 0x4640d33edb41d7c7ba95839f8c3fdee42ac5e080
+===== DaCapo 9.12 avrora FAILED =====
+Validation FAILED for avrora small
+* TOMCAT
+** ERROR MESSAGE
+erik@erik-GA-790XTA-UD4:~/java-alias-agent/agent$ ./bench.sh tomcat
+Using scaled threading model. 4 processors detected, 4 threads used to drive the workload, in a possible range of [1,4]
+Server thread created
+===== DaCapo 9.12 tomcat starting =====
+Loading web application
+Creating client threads
+Waiting for clients to complete
+URL /examples/jsp/jsp2/el/basic-arithmetic.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/el/basic-arithmetic.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/el/basic-arithmetic.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/el/basic-arithmetic.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/el/basic-comparisons.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/el/basic-comparisons.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/el/basic-comparisons.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/el/basic-comparisons.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/el/implicit-objects.jsp?foo=bar returned status 500 (expected 200)
+URL /examples/jsp/jsp2/el/implicit-objects.jsp?foo=bar returned status 500 (expected 200)
+URL /examples/jsp/jsp2/el/implicit-objects.jsp?foo=bar returned status 500 (expected 200)
+URL /examples/jsp/jsp2/el/implicit-objects.jsp?foo=bar returned status 500 (expected 200)
+URL /examples/jsp/jsp2/el/functions.jsp?foo=JSP+2.0 returned status 500 (expected 200)
+URL /examples/jsp/jsp2/el/functions.jsp?foo=JSP+2.0 returned status 500 (expected 200)
+URL /examples/jsp/jsp2/el/functions.jsp?foo=JSP+2.0 returned status 500 (expected 200)
+URL /examples/jsp/jsp2/el/functions.jsp?foo=JSP+2.0 returned status 500 (expected 200)
+URL /examples/jsp/jsp2/simpletag/repeat.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/simpletag/repeat.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/simpletag/repeat.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/simpletag/repeat.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/simpletag/book.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/simpletag/book.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/simpletag/book.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/simpletag/book.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/tagfiles/panel.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/tagfiles/panel.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/tagfiles/panel.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/tagfiles/panel.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/tagfiles/products.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/tagfiles/products.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/tagfiles/products.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/tagfiles/products.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/jspx/basic.jspx returned status 500 (expected 200)
+URL /examples/jsp/jsp2/jspx/basic.jspx returned status 500 (expected 200)
+URL /examples/jsp/jsp2/jspx/basic.jspx returned status 500 (expected 200)
+URL /examples/jsp/jsp2/jspx/basic.jspx returned status 500 (expected 200)
+URL /examples/jsp/jsp2/jspx/textRotate.jspx?name=JSPX returned status 500 (expected 200)
+URL /examples/jsp/jsp2/jspx/textRotate.jspx?name=JSPX returned status 500 (expected 200)
+URL /examples/jsp/jsp2/jspx/textRotate.jspx?name=JSPX returned status 500 (expected 200)
+URL /examples/jsp/jsp2/jspx/textRotate.jspx?name=JSPX returned status 500 (expected 200)
+URL /examples/jsp/jsp2/jspattribute/jspattribute.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/jspattribute/jspattribute.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/jspattribute/jspattribute.jsp returned status 500 (expected 200)
+URL /examples/jsp/jsp2/jspattribute/jspattribute.jsp returned status 500 (expected 200)
+URL /examples/jsp/plugin/plugin.jsp returned status 500 (expected 200)
+URL /examples/jsp/plugin/plugin.jsp returned status 500 (expected 200)
+URL /examples/jsp/plugin/plugin.jsp returned status 500 (expected 200)
+URL /examples/jsp/plugin/plugin.jsp returned status 500 (expected 200)
+URL /examples/jsp/tagplugin/if.jsp returned status 500 (expected 200)
+URL /examples/jsp/tagplugin/if.jsp returned status 500 (expected 200)
+URL /examples/jsp/tagplugin/if.jsp returned status 500 (expected 200)
+URL /examples/jsp/tagplugin/if.jsp returned status 500 (expected 200)
+URL /examples/jsp/tagplugin/foreach.jsp returned status 500 (expected 200)
+URL /examples/jsp/tagplugin/foreach.jsp returned status 500 (expected 200)
+URL /examples/jsp/tagplugin/foreach.jsp returned status 500 (expected 200)
+URL /examples/jsp/tagplugin/foreach.jsp returned status 500 (expected 200)
+URL /examples/jsp/tagplugin/choose.jsp returned status 500 (expected 200)
+URL /examples/jsp/tagplugin/choose.jsp returned status 500 (expected 200)
+URL /examples/jsp/tagplugin/choose.jsp returned status 500 (expected 200)
+URL /examples/jsp/tagplugin/choose.jsp returned status 500 (expected 200)
+Client threads complete ... unloading web application
+Digest validation failed for stderr.log, expecting 0xda39a3ee5e6b4b0d3255bfef95601890afd80709 found 0x94e3ab6558930c9075cd3372d37560d8d3f24d04
+===== DaCapo 9.12 tomcat FAILED =====
+Server stopped ... iteration complete
+Validation FAILED for tomcat small
+* TRADEBEANS and Tradesoap
+** ERROR MESSAGE
+Exception in thread "Thread-4" java.lang.IncompatibleClassChangeError: Implementing class
+	at java.lang.ClassLoader.defineClass1(Native Method)
+	at java.lang.ClassLoader.defineClass(ClassLoader.java:792)
+	at java.security.SecureClassLoader.defineClass(SecureClassLoader.java:142)
+	at java.net.URLClassLoader.defineClass(URLClassLoader.java:449)
+	at java.net.URLClassLoader.access$100(URLClassLoader.java:71)
+	at java.net.URLClassLoader$1.run(URLClassLoader.java:361)
+	at java.net.URLClassLoader$1.run(URLClassLoader.java:355)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.net.URLClassLoader.findClass(URLClassLoader.java:354)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:424)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:357)
+	at java.lang.ClassLoader.defineClass1(Native Method)
+	at java.lang.ClassLoader.defineClass(ClassLoader.java:792)
+	at java.security.SecureClassLoader.defineClass(SecureClassLoader.java:142)
+	at java.net.URLClassLoader.defineClass(URLClassLoader.java:449)
+	at java.net.URLClassLoader.access$100(URLClassLoader.java:71)
+	at java.net.URLClassLoader$1.run(URLClassLoader.java:361)
+	at java.net.URLClassLoader$1.run(URLClassLoader.java:355)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.net.URLClassLoader.findClass(URLClassLoader.java:354)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:424)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:357)
+	at org.apache.geronimo.persistence.PersistenceUnitGBean$PersistenceUnitInfoImpl.<init>(PersistenceUnitGBean.java:265)
+	at org.apache.geronimo.persistence.PersistenceUnitGBean.<init>(PersistenceUnitGBean.java:112)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:57)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:526)
+	at org.apache.geronimo.gbean.runtime.GBeanInstance.createInstance(GBeanInstance.java:948)
+	at org.apache.geronimo.gbean.runtime.GBeanInstanceState.attemptFullStart(GBeanInstanceState.java:268)
+	at org.apache.geronimo.gbean.runtime.GBeanInstanceState.start(GBeanInstanceState.java:102)
+	at org.apache.geronimo.gbean.runtime.GBeanInstanceState.startRecursive(GBeanInstanceState.java:124)
+	at org.apache.geronimo.gbean.runtime.GBeanInstance.startRecursive(GBeanInstance.java:555)
+	at org.apache.geronimo.kernel.basic.BasicKernel.startRecursiveGBean(BasicKernel.java:379)
+	at org.apache.geronimo.kernel.config.ConfigurationUtil.startConfigurationGBeans(ConfigurationUtil.java:456)
+	at org.apache.geronimo.kernel.config.KernelConfigurationManager.start(KernelConfigurationManager.java:188)
+	at org.apache.geronimo.kernel.config.SimpleConfigurationManager.startConfiguration(SimpleConfigurationManager.java:563)
+	at sun.reflect.GeneratedMethodAccessor30.invoke(Unknown Source)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:606)
+	at org.apache.geronimo.gbean.runtime.ReflectionMethodInvoker.invoke(ReflectionMethodInvoker.java:34)
+	at org.apache.geronimo.gbean.runtime.GBeanOperation.invoke(GBeanOperation.java:124)
+	at org.apache.geronimo.gbean.runtime.GBeanInstance.invoke(GBeanInstance.java:832)
+	at org.apache.geronimo.gbean.runtime.RawInvoker.invoke(RawInvoker.java:57)
+	at org.apache.geronimo.kernel.basic.RawOperationInvoker.invoke(RawOperationInvoker.java:35)
+	at org.apache.geronimo.kernel.basic.ProxyMethodInterceptor.intercept(ProxyMethodInterceptor.java:96)
+	at org.apache.geronimo.gbean.GBeanLifecycle$$EnhancerByCGLIB$$d936012d.startConfiguration(<generated>)
+	at org.apache.geronimo.system.main.EmbeddedDaemon.doStartup(EmbeddedDaemon.java:162)
+	at org.apache.geronimo.system.main.EmbeddedDaemon.execute(EmbeddedDaemon.java:79)
+	at org.dacapo.daytrader.DaCapoServerRunner$1.run(DaCapoServerRunner.java:45)
+	at java.lang.Thread.run(Thread.java:724)
+Error initializing DaCapo: (404)Not Found
+AxisFault
+ faultCode: {http://xml.apache.org/axis/}HTTP
+ faultSubcode: 
+ faultString: (404)Not Found
+ faultActor: 
+ faultNode: 
+ faultDetail: 
+	{}:return code:  404
+&lt;html&gt;
+&lt;head&gt;
+&lt;meta http-equiv=&quot;Content-Type&quot; content=&quot;text/html; charset=ISO-8859-1&quot;/&gt;
+&lt;title&gt;Error 404 NOT_FOUND&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;h2&gt;HTTP ERROR: 404&lt;/h2&gt;&lt;pre&gt;NOT_FOUND&lt;/pre&gt;
+&lt;p&gt;RequestURI=/daytrader/services/TradeWSServices&lt;/p&gt;
+&lt;p&gt;&lt;i&gt;&lt;small&gt;&lt;a href=&quot;http://jetty.mortbay.org&quot;&gt;Powered by jetty://&lt;/a&gt;&lt;/small&gt;&lt;/i&gt;&lt;/p&gt;
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+&lt;/body&gt;
+&lt;/html&gt;
+
+	{http://xml.apache.org/axis/}HttpErrorCode:404
+
+(404)Not Found
+	at org.apache.axis.transport.http.HTTPSender.readFromSocket(HTTPSender.java:744)
+	at org.apache.axis.transport.http.HTTPSender.invoke(HTTPSender.java:144)
+	at org.apache.axis.strategies.InvocationStrategy.visit(InvocationStrategy.java:32)
+	at org.apache.axis.SimpleChain.doVisiting(SimpleChain.java:118)
+	at org.apache.axis.SimpleChain.invoke(SimpleChain.java:83)
+	at org.apache.axis.client.AxisClient.invoke(AxisClient.java:165)
+	at org.apache.axis.client.Call.invokeEngine(Call.java:2784)
+	at org.apache.axis.client.Call.invoke(Call.java:2767)
+	at org.apache.axis.client.Call.invoke(Call.java:2443)
+	at org.apache.axis.client.Call.invoke(Call.java:2366)
+	at org.apache.axis.client.Call.invoke(Call.java:1812)
+	at org.apache.geronimo.axis.client.ServiceEndpointMethodInterceptor.doIntercept(ServiceEndpointMethodInterceptor.java:103)
+	at org.apache.geronimo.axis.client.ServiceEndpointMethodInterceptor.intercept(ServiceEndpointMethodInterceptor.java:58)
+	at org.apache.geronimo.axis.client.GenericServiceEndpointWrapper$$EnhancerByCGLIB$$157f9758.initializeDaCapo(<generated>)
+	at org.apache.geronimo.samples.daytrader.soap.TradeWebSoapProxy.initializeDaCapo(TradeWebSoapProxy.java:280)
+	at org.apache.geronimo.samples.daytrader.dacapo.DaCapoTrader$1.run(DaCapoTrader.java:171)
+	at java.lang.Thread.run(Thread.java:724)
+
+	
