@@ -31,7 +31,7 @@ const char *filename = "output";
 
 FILE * pFile = stdout;
 
-bool writeToFile = true;
+bool writeToFile = false;
 
 /******************************************************************************/
 /* Global Data                                                                */
@@ -672,7 +672,6 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
 		  jint* new_class_data_len,
 		  unsigned char** new_class_data) 
 {
-  
     if (!class_data || !name) {
       return;
     }
@@ -689,10 +688,12 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
        || strcmp(name,"Instrument") == 0) {
       return;
     }
+    const char *res = strstr(name,"org/cliffc/");
+    if (res) {
+      return;
+    }
 
-    
-    static int counter = 0;
-    counter++;
+   
 
     // int n = 359;
     // // printf("c++ %d %s\n",counter,name);

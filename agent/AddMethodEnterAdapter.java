@@ -296,50 +296,10 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     			       String owner,
     			       String name,
     			       String desc) {
-
-
-
-	
 	if (!fieldUse || disableAll) {
 	    super.visitFieldInsn(opcode,owner,name,desc);
 	    return;
 	}
-
-	if (name.indexOf('$') != -1) {
-	    super.visitFieldInsn(opcode,owner,name,desc);
-	    return;
-	}
-	// String op;
-	// if (opcode == PUTFIELD) {
-	//     op = "PUTFIELD";
-	// }
-	// else if (opcode == GETFIELD) {
-	//     op = "GETFIELD";
-	// }
-	// else if (opcode == PUTSTATIC) {
-	//     op = "PUTSTATIC";
-	// }
-	// else if (opcode == GETSTATIC) {
-	//     op = "GETSTATIC";
-	// }
-	// else {
-	//     op = "OTHER";
-	// }
-
-	// if (klass.equals("org/eclipse/equinox/internal/simpleconfigurator/SimpleConfiguratorImpl")) {
-	//     if (name.equals("bundle") ||
-	// 	name.equals("context") ||
-	// 	name.equals("configApplier") ||
-	// 	name.equals("configurationLock") ||
-	// 	name.equals("configurationURL")
-	// 	) {
-	// 	mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","empty","()V");
-	// 	super.visitFieldInsn(opcode,owner,name,desc);
-	// 	return;
-	//     }
-	//     System.out.println(op + " " + name);
-	// }
-
 
     	char fc = desc.charAt(0);
 	if (name.equals("this$0")) {
@@ -347,13 +307,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	    return;
 	}
 
-
-
-
-
-
 	if (opcode == PUTFIELD) {
-
 	    //stack: objref value |
 
 	    // value is object or array
@@ -363,7 +317,6 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	    }
 	    // value is long or double
 	    else if (fc == 'J' || fc == 'D') {
-
 		dup2X1();
 		//stack: value | objref value
 		pop2();
@@ -400,11 +353,10 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	    else {
 	    	push((String)null);
 	    }
-
 	    //stack: objref value | objref (obj/arr/null) (oldvalue/null)
-	    push(owner);                         // #4
-	    push(name);                          // #5
-	    push(desc);                          // #6
+	    push(owner);
+	    push(name);
+	    push(desc);
 	    insertThisOrStatic();
 	    addThreadAndField(1);
 	}
@@ -427,15 +379,12 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 		push((String)null);
 	    }
 
-	    push(owner);                         // #4
-	    push(name);                          // #5
-	    push(desc);                          // #6
-	    insertThisOrStatic();                // #7-8
-	    addThreadAndField(1);                // # 9
+	    push(owner);
+	    push(name);
+	    push(desc);
+	    insertThisOrStatic();
+	    addThreadAndField(1);
 	}
-
-
-
 
 
 	else if (opcode == GETFIELD) {
@@ -519,23 +468,23 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
 
 	if (opcode == ARETURN) {
-	    dup();// #1
+	    dup();
 	}
 	else {
-	    push((String)null); // #1
+	    push((String)null);
 	}
 	//ref ref
-	push(met); // #2 
-	push(des); // #3
-	insertThisOrStatic(); // #4,5
+	push(met);
+	push(des);
+	insertThisOrStatic();
 
 	// todo make a new array with out of scopes
-	push((String)null); // #6
+	push((String)null);
 	
 	mv.visitMethodInsn(INVOKESTATIC,
 			   "java/lang/Thread",
 			   "currentThread",
-			   "()Ljava/lang/Thread;"); // #7
+			   "()Ljava/lang/Thread;");
 
 	mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","methodExit",
 			   "(Ljava/lang/Object;" +    // returned obj    #1
@@ -569,9 +518,6 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	mv.visitLdcInsn(met);          // #1
 	mv.visitLdcInsn(des);          // #2
 	insertThisOrStatic();          // #3-4
-
-
-
 
 
 	if (parametersCounter > 0) {
