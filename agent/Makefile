@@ -38,12 +38,12 @@ test:
 	@java $(BCP) -agentpath:./lib/testagent.so=test,4 test/MethodEnter
 	@java $(BCP) -agentpath:./lib/testagent.so=test,5 test/MethodExit
 	@java $(BCP) -agentpath:./lib/testagent.so=test,6 test/VarStore
-	rm -f *.class
-	rm -f test/*.class
+	@rm -f *.class
+	@rm -f test/*.class
 
 
 bench:
-	java $(BCP) -agentpath:./lib/testagent.so -jar $(DACAPO) -s small avrora | gzip -f > output.gz
+	java -noverify $(BCP) -agentpath:./lib/testagent.so -jar $(DACAPO) -s small eclipse | gzip -f > output.gz
 
 clean:
 	@rm -f *.class

@@ -11,6 +11,7 @@ bool test_allocation(list<Event *> list)
       if ((*it)->getType() == 1)
 	nr++;
     }
+    printf("%d\n\n",nr);
     if (nr == 6)
       return true;
   return false;

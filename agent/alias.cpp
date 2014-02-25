@@ -5,6 +5,14 @@
 #include "eventlist.h"
 #include "test.h"
 
+#define ALLOC 1
+#define GETFIELD 2
+#define STOREFIELD 3
+#define METHODCALL 4
+#define DEALLOC 5
+#define RETURN 6
+#define STOREVAR 7
+
 using namespace std;
 
 /******************************************************************************/
@@ -12,15 +20,15 @@ using namespace std;
 /******************************************************************************/
 
 // set variables will enable callbacks
-bool alloc=       true;
+bool alloc =      true;
 bool methodEnter= true;
 bool getField =   true;
 bool storeField = true;
 bool returns =    true;
 bool storeVar =   true;
+
 // If set no callback will be enabled
 bool disableAll = false;
-
 
 bool test = false;
 int testnr = 0;
@@ -46,6 +54,7 @@ jmethodID g_mid = 0;
 
 // indicates JVM initialization
 bool g_init = false;
+// indicates JVM death
 bool g_dead = false;
 
 // tags 1 to n
@@ -82,7 +91,7 @@ static void exit_critical_section() {
 /******************************************************************************/
 
 /*
-  returns a string(c++ string) copied from str(java string)
+  returns a c++ string with content copied from a java str
 */
 string toCPS(JNIEnv *env,
 	     jstring str) {
@@ -97,7 +106,7 @@ string toCPS(JNIEnv *env,
 }
 
 /*
-  returns obj's tag, or 0 if obj == NULL
+  returns obj's tag(tag > 0), or 0 if obj == NULL
 */
 jlong get_tag(jobject obj) {
   jlong tag = 0;
@@ -152,7 +161,6 @@ JNIEXPORT void JNICALL Java_NativeInterface_storeVar
     } exit_critical_section();
   }
 }
-
 
 
 /* 
@@ -559,78 +567,146 @@ JNIEXPORT void JNICALL Java_NativeInterface_newObj
 {
   enter_critical_section(); {
     jlong stored_tag = get_tag(stored);
-    // if (stored_tag != 0) {
-    //   return;
-    // }
-    // else 
-      if (stored_tag == 0 && stored != NULL) {
-	g_jvmti->SetTag(stored,g_objectid++);
-	stored_tag = g_objectid - 1;
-      }
-    
-    if (alloc && disableAll) {
-      string type = toCPS(env,desc);
-      jlong caller_tag = get_tag(caller);
-      string cp_staticcaller;
-      if (caller_tag == 0) {
-	cp_staticcaller = toCPS(env,staticcaller);
-      }
-      if (caller_tag == 0 && cp_staticcaller.compare("") == 0) {
-	jvmtiFrameInfo *frame;
-	g_jvmti->Allocate(3*sizeof(jvmtiFrameInfo),(unsigned char**)&frame);
+    if (stored_tag == 0 && stored != NULL) {
+      g_jvmti->SetTag(stored,g_objectid++);
+      stored_tag = g_objectid - 1;
+    }
 
-	jint count;
-	g_jvmti->GetStackTrace(thread,1,2,frame,&count);
-	if (count > 1) {
-	  char *methodName2 = NULL;
-	  g_jvmti->GetMethodName(frame[0].method, &methodName2,NULL, NULL);
+    if (alloc && !disableAll) {
+      if (!test) {
+	const char *type = env->GetStringUTFChars(desc, NULL);
+	fprintf(pFile,"%d %ld %s ",ALLOC,stored_tag,type);
+	env->ReleaseStringUTFChars(desc, type);
+	
+	jlong caller_tag = get_tag(caller);
+	if (caller_tag != 0) {
+	  fprintf(pFile,"%ld\n",caller_tag);
+	}
+	else if (staticcaller) {
+	  const char *clr = env->GetStringUTFChars(staticcaller, NULL);
+	  fprintf(pFile,"%s\n",clr);
+	  env->ReleaseStringUTFChars(staticcaller, clr);
+	}
+	else {
+	  jvmtiFrameInfo *frame;
+	  g_jvmti->Allocate(3*sizeof(jvmtiFrameInfo),(unsigned char**)&frame);
+
+	  jint count;
+	  g_jvmti->GetStackTrace(thread,1,2,frame,&count);
+	  if (count > 1) {
+	    char *methodName2 = NULL;
+	    g_jvmti->GetMethodName(frame[0].method, &methodName2,NULL, NULL);
 
 
-	  jint access_flags = 0;
-	  g_jvmti->GetMethodModifiers(frame[0].method,&access_flags);
-	  //printf("calling met: %s access flags: %d \n",methodName2, access_flags);
-	  // flags == 9
-	  
-	  if ((access_flags & 8) != 0) {
-	    jclass declaring_class;
-	    char *source_name;
-	    jvmtiError error = g_jvmti->GetMethodDeclaringClass(frame[0].method,&declaring_class);
-	    if (error != JVMTI_ERROR_NONE) {
-	      printf("errrrrrrror");
+	    jint access_flags = 0;
+	    g_jvmti->GetMethodModifiers(frame[0].method,&access_flags);
+	    if ((access_flags & 8) != 0) {
+	      jclass declaring_class;
+	      char *source_name;
+	      char * gen_name;
+	      jvmtiError error = g_jvmti->GetMethodDeclaringClass(frame[0].method,&declaring_class);
+	      if (error != JVMTI_ERROR_NONE) {
+		printf("errrrrrrror");
+	      }
+	      error = g_jvmti->GetClassSignature(declaring_class,&source_name,&gen_name);
+	      if (error != JVMTI_ERROR_NONE) {
+		printf("errrrrrrror");
+	      }
+	      if (gen_name) {
+		fprintf(pFile,"%s\n",gen_name);
+		g_jvmti->Deallocate((unsigned char *)gen_name);		
+	      }
+	      else if (source_name) {
+		fprintf(pFile,"%s\n",source_name);
+		g_jvmti->Deallocate((unsigned char *)source_name);
+	      }
+
 	    }
-	    error = g_jvmti->GetClassSignature(declaring_class,&source_name,NULL);
-	    if (error != JVMTI_ERROR_NONE) {
-	      printf("errrrrrrror");
-	    }
-	    //strcat(source_name,methodName2);
-	    cp_staticcaller = source_name;
-	    cp_staticcaller.append(methodName2);
-	    //cp_staticcallercaller = source_name;
-	    if (source_name) {
-	      g_jvmti->Deallocate((unsigned char *)source_name);
+	    else {
+	      jobject callerobj = NULL;
+	      jvmtiError error = g_jvmti->GetLocalObject(thread,1,0,&callerobj);
+	      if (callerobj != NULL) {
+		error = g_jvmti->GetTag(callerobj,&caller_tag);
+		if (error != JVMTI_ERROR_NONE) {
+		  printf("errrrrrrror %d \n",error);
+		}
+		if (caller_tag == 0) {
+		  caller_tag = g_objectid++;
+		  g_jvmti->SetTag(callerobj,caller_tag);
+		}
+		fprintf(pFile,"%ld\n",caller_tag);
+	      }
 	    }
 	  }
 	  else {
-	    jobject callerobj = NULL;
-	    jvmtiError error = g_jvmti->GetLocalObject(thread,1,0,&callerobj);
-	    if (callerobj != NULL) {
-	      error = g_jvmti->GetTag(callerobj,&caller_tag);
+	    fprintf(pFile,"-\n");
+	  }
+	}
+      }
+      else {
+	string type = toCPS(env,desc);
+	jlong caller_tag = get_tag(caller);
+	string cp_staticcaller;
+	if (caller_tag == 0) {
+	  cp_staticcaller = toCPS(env,staticcaller);
+	}
+	if (caller_tag == 0 && cp_staticcaller.compare("") == 0) {
+	  jvmtiFrameInfo *frame;
+	  g_jvmti->Allocate(3*sizeof(jvmtiFrameInfo),(unsigned char**)&frame);
+
+	  jint count;
+	  g_jvmti->GetStackTrace(thread,1,2,frame,&count);
+	  if (count > 1) {
+	    char *methodName2 = NULL;
+	    g_jvmti->GetMethodName(frame[0].method, &methodName2,NULL, NULL);
+
+
+	    jint access_flags = 0;
+	    g_jvmti->GetMethodModifiers(frame[0].method,&access_flags);
+	    //printf("calling met: %s access flags: %d \n",methodName2, access_flags);
+	    // flags == 9
+	  
+	    if ((access_flags & 8) != 0) {
+	      jclass declaring_class;
+	      char *source_name;
+	      jvmtiError error = g_jvmti->GetMethodDeclaringClass(frame[0].method,&declaring_class);
 	      if (error != JVMTI_ERROR_NONE) {
-		printf("errrrrrrror %d \n",error);
+		printf("errrrrrrror");
 	      }
-	      if (caller_tag == 0) {
-		caller_tag = g_objectid++;
-		g_jvmti->SetTag(callerobj,caller_tag);
+	      error = g_jvmti->GetClassSignature(declaring_class,&source_name,NULL);
+	      if (error != JVMTI_ERROR_NONE) {
+		printf("errrrrrrror");
+	      }
+	      //strcat(source_name,methodName2);
+	      cp_staticcaller = source_name;
+	      cp_staticcaller.append(methodName2);
+	      //cp_staticcallercaller = source_name;
+	      if (source_name) {
+		g_jvmti->Deallocate((unsigned char *)source_name);
+	      }
+	    }
+	    else {
+	      jobject callerobj = NULL;
+	      jvmtiError error = g_jvmti->GetLocalObject(thread,1,0,&callerobj);
+	      if (callerobj != NULL) {
+		error = g_jvmti->GetTag(callerobj,&caller_tag);
+		if (error != JVMTI_ERROR_NONE) {
+		  printf("errrrrrrror %d \n",error);
+		}
+		if (caller_tag == 0) {
+		  caller_tag = g_objectid++;
+		  g_jvmti->SetTag(callerobj,caller_tag);
+		}
 	      }
 	    }
 	  }
-	}	
+	}
+
+	Allocation *event = new Allocation (type,stored_tag,caller_tag,cp_staticcaller);
+	eventlist.push_back(event);
       }
-
-
-      Allocation *event = new Allocation (type,stored_tag,caller_tag,cp_staticcaller);
-      eventlist.push_back(event);
     }
+    
   }exit_critical_section();
 }
 
@@ -640,15 +716,20 @@ JNIEXPORT void JNICALL Java_NativeInterface_newObj
 */
 void JNICALL
 cbObjectFree(jvmtiEnv *jvmti_env,
-	     jlong tag) 
+	     jlong tag)
 {
-  Deallocation *event = new Deallocation (tag);
-  eventlist.push_back(event);
+  if (!test) {
+    fprintf(pFile,"%d %ld\n",DEALLOC,tag);
+  }
+  else {
+    Deallocation *event = new Deallocation (tag);
+    eventlist.push_back(event);
+  }
 }
 
 
 /******************************************************************************/
-/* System Callbacks                                                           */
+/* JVMTI System Callbacks                                                     */
 /******************************************************************************/
 
 

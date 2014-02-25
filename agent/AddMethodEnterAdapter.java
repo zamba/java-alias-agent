@@ -19,7 +19,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     boolean methodExit = false;
 
     boolean storeVar = false;
-    boolean newObjs = false;
+    boolean newObjs = true;
 
     boolean fieldUse = true;
 
@@ -33,9 +33,6 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	des = desc;
 	klass = owner;	
 	isMetStatic = isStatic(methodAccess);
-	// if (owner.equals("org/dacapo/harness/Eclipse"))
-	//     System.out.println("ASM Instrumenting Method: " + owner + " " + name);
-
     }
 
     boolean isStatic(int access) {
@@ -153,7 +150,6 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	    insertThisOrStatic();
 	    insertThreadAndNew();
 	}
-
     }
 
 
