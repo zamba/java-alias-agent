@@ -1,0 +1,50 @@
+* OPCODES IN OUTPUT
+allocation	1
+getfield 	2
+storefield	3
+methodcall	4
+deallocation	5
+return		6
+storevar	7
+
+* Benchmarks in Dacapo
+  AVRORA
+  BATIK
+  ECLIPSE
+  FOP
+  h2
+  jython
+  luindex
+  lusearch
+  pmd
+  sunflow
+  tomcat
+  tradebeans
+  tradesoap
+  xalan
+
+* Event status
+** DONE STOREFIELD
+** DONE LOADFIELD
+** DONE DEALLOC
+** TODO ALLOC
+Avrora
+Batik
+Verify error in eclipse
+** TODO STOREVAR
+** TODO METHODCALL
+** TODO METHODRETURN
+
+
+
+
+* Failing benchmarks
+** Field
+   AVRORA
+   TOMCAT
+   TRADEBEANS
+   TRADESOAP
+** Field & Alloc
+   ECLIPSE
+   
+
