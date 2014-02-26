@@ -1,4 +1,19 @@
-* OPCODES IN OUTPUT
+* OUTPUT DOCUMENTATION
+** EVENTS
+The events are separated by a NEWLINE('\n').
+
+** Identifiers and primitive fields
+All identifiers are supposed to be larger than 0,
+except primitive fields or if something else is stated.
+
+Field stores/loads of primitive type are traced,
+but not the values.
+
+** OPCODE
+The first character in every line is
+a number that describes what type of
+event it is according to below:
+
 allocation	1
 getfield 	2
 storefield	3
@@ -6,6 +21,47 @@ methodcall	4
 deallocation	5
 return		6
 storevar	7
+
+** Allocation
+The allocation event is formed as: 
+1 X Y Z
+
+where:
+X = LONG = Identifies the allocated object.
+Y = TYPE = describes the allocated object's TYPE
+Z = STRING/LONG = describes the caller to new.
+                  If the caller is static Z will be a string,
+		  else Z will be a long.
+** Field Load
+The field load event is formed as:
+2 X(Y) Z A K
+
+where:
+X = string = field name
+Y = string = field description
+Z = long = Identifies the loaded object
+A = STRING/LONG = Identifies caller
+K = STRING/LONG = Identifies callee
+
+** Field Store
+The field store event is formed as:
+3 X(Y) Z O A K
+
+where:
+X = string = field name
+Y = string = field description
+Z = long = Identifies the stored object
+O = long = Identifies the object that was held by the field before... (the overwritten object)
+           O can be 0.
+A = STRING/LONG = Identifies caller
+K = STRING/LONG = Identifies callee
+
+** Deallocation
+The deallocation event is formed as:
+5 X
+
+where:
+X = long = Identifies the garbage collected object
 
 * Benchmarks in Dacapo
   AVRORA
@@ -27,7 +83,7 @@ storevar	7
 ** DONE STOREFIELD
 ** DONE LOADFIELD
 ** DONE DEALLOC
-** TODO ALLOC
+** DONE ALLOC
 Avrora
 Batik
 Verify error in eclipse
@@ -39,12 +95,13 @@ Verify error in eclipse
 
 
 * Failing benchmarks
-** Field
+** Using Fields
    AVRORA
    TOMCAT
    TRADEBEANS
    TRADESOAP
-** Field & Alloc
-   ECLIPSE
+** Using Fields & Alloc
+   Same as "Using Fields" + ECLIPSE
+   (Eclipse can run with the -noverify option to java though)
    
 
