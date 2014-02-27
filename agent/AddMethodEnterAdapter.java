@@ -18,7 +18,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     boolean methodEnter = false;
     boolean methodExit = false;
 
-    boolean storeVar = false;
+    boolean storeVar = true;
     boolean newObjs = true;
 
     boolean fieldUse = true;
@@ -199,8 +199,14 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 /******************************************************************************/
 /* store/load var                                                             */
 /******************************************************************************/
-
-
+    boolean jsr = false;
+    public void visitJumpInsn(int opcode,
+			      Label label) {
+	if (opcode == JSR) {
+	    jsr = true;
+	}
+	super.visitJumpInsn(opcode,label);
+    }
 
     /*
       Possible OPCODES:
@@ -216,33 +222,53 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	    return;
 	}
 	if (opcode == ASTORE) {
+	    if (jsr) {
+		jsr = false;
+		super.visitVarInsn(opcode,var);
+		return;
+	    }
+	    // visitVarInsn(ALOAD,var);
+
+	    // mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","passObj",
+	    // 		       "(Ljava/lang/Object;)V");
+
+
 	    dup(); // #1
 	    if (true) {
-		push((String)null); //#2
+	    	push((String)null); //#2
 	    }
 	    else {
-		// PROBLEMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
-		// --------------------------------------
-		mv.visitVarInsn(ALOAD,var); //#2
-		// --------------------------------------
+	    	// PROBLEMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
+	    	// --------------------------------------
+	    	mv.visitVarInsn(ALOAD,var); //#2
+	    	// --------------------------------------
 	    }
+
+
+	    // push((String) null); // #3
+	    // push((String) null); //#4
+	    // push((String) null); // #5
+	    // push((String) null); // #6
+	    // push((String) null); //#7
 
 	    push(met); // #3
 	    push(des); // #4
 	    insertThisOrStatic(); // #5,6
 	    mv.visitMethodInsn(INVOKESTATIC,
-			       "java/lang/Thread",
-			       "currentThread",
-			       "()Ljava/lang/Thread;"); // #7
+	    		       "java/lang/Thread",
+	    		       "currentThread",
+	    		       "()Ljava/lang/Thread;"); // #7
 
 	    mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","storeVar",
-			       "(Ljava/lang/Object;" +    // stored obj      #1
-			       "Ljava/lang/Object;" +	 // old value        #2		       
-			       "Ljava/lang/String;" +     // method name     #3
-			       "Ljava/lang/String;" +     // method desc     #4
-			       "Ljava/lang/String;" +     // callee static   #5
-			       "Ljava/lang/Object;" +     // callee obj      #6
-			       "Ljava/lang/Thread;)V");   // current thread  #7
+	    		       "(Ljava/lang/Object;" +    // stored obj      #1
+	    		       "Ljava/lang/Object;" +	 // old value        #2		       
+	    		       "Ljava/lang/String;" +     // method name     #3
+	    		       "Ljava/lang/String;" +     // method desc     #4
+	    		       "Ljava/lang/String;" +     // callee static   #5
+	    		       "Ljava/lang/Object;" +     // callee obj      #6
+	    		       "Ljava/lang/Thread;)V");   // current thread  #7
+	    // mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","empty",
+	    // 		       "()V");
 	}
     	super.visitVarInsn(opcode,var);
     }

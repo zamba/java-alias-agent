@@ -63,6 +63,14 @@ JNIEXPORT void JNICALL Java_NativeInterface_storeVar
 JNIEXPORT void JNICALL Java_NativeInterface_empty
   (JNIEnv *, jclass);
 
+/*
+ * Class:     NativeInterface
+ * Method:    passObj
+ * Signature: (Ljava/lang/Object;)V
+ */
+JNIEXPORT void JNICALL Java_NativeInterface_passObj
+  (JNIEnv *, jclass, jobject);
+
 #ifdef __cplusplus
 }
 #endif

@@ -33,8 +33,6 @@ bool disableAll = false;
 bool test = false;
 int testnr = 0;
 
-const char *segment = "/home/erik/java-alias-agent/agent";
-
 const char *filename = "output";
 
 FILE * pFile = stdout;
@@ -121,6 +119,14 @@ jlong get_tag(jobject obj) {
 /* Event Callbacks                                                            */
 /******************************************************************************/
 
+
+JNIEXPORT void JNICALL Java_NativeInterface_passObj
+(JNIEnv *, jclass, jobject) {
+  
+}
+
+
+
 JNIEXPORT void JNICALL Java_NativeInterface_empty
 (JNIEnv *, jclass) {
   printf("\n\nCALL TO EMPTY() in c++, from JAVA\n\n");
@@ -142,22 +148,38 @@ JNIEXPORT void JNICALL Java_NativeInterface_storeVar
 {
   if (storeVar && !disableAll) {
     enter_critical_section(); {
-      jlong stored_tag = get_tag(stored);
-      jlong callee_tag = get_tag(callee);
-      jlong old_tag = get_tag(old);
-      string cp_method = toCPS(env,method);
-      string cp_desc = toCPS(env,desc);
-      string cp_callee;
-      if (callee_tag == 0) {
-	cp_callee = toCPS(env,static_callee);
+      if (!test) {
+	jlong stored_tag = get_tag(stored);
+	jlong old_tag = get_tag(old);
+	jlong callee_tag = get_tag(callee);
+	fprintf(pFile,"%d %ld %ld ",STOREVAR,stored_tag,old_tag);
+	if (callee_tag == 0 && static_callee) {
+	  const char *c_name = env->GetStringUTFChars(static_callee, NULL);
+	  fprintf(pFile,"%s\n",c_name);
+	  env->ReleaseStringUTFChars(static_callee, c_name);
+	}
+	else {
+	  fprintf(pFile,"%ld\n",callee_tag);
+	}
       }
-      StoredVar *event = new StoredVar(cp_method,
-				       cp_desc,
-				       cp_callee,
-				       callee_tag,
-				       stored_tag,
-				       old_tag);
-      eventlist.push_back(event);
+      else {
+	jlong stored_tag = get_tag(stored);
+	jlong callee_tag = get_tag(callee);
+	jlong old_tag = get_tag(old);
+	string cp_method = toCPS(env,method);
+	string cp_desc = toCPS(env,desc);
+	string cp_callee;
+	if (callee_tag == 0) {
+	  cp_callee = toCPS(env,static_callee);
+	}
+	StoredVar *event = new StoredVar(cp_method,
+					 cp_desc,
+					 cp_callee,
+					 callee_tag,
+					 stored_tag,
+					 old_tag);
+	eventlist.push_back(event);
+      }
     } exit_critical_section();
   }
 }
@@ -973,14 +995,11 @@ Agent_OnLoad(JavaVM *vm,
     return JNI_ERR;
   }
 
-   // jvmti->AddToSystemClassLoaderSearch(segment);
-
-
-   
-   // setbuf(pFile,NULL);
-   if (writeToFile) {
-     pFile = fopen (filename,"w");
-   }
+  
+  // setbuf(pFile,NULL);
+  if (writeToFile) {
+    pFile = fopen (filename,"w");
+  }
 
   return JNI_OK;
 }

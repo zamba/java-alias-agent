@@ -69,4 +69,6 @@ public class NativeInterface {
 
     public static native void empty();
 
+    public static native void passObj(Object obj);
+
 }
