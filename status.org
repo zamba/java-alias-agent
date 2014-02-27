@@ -63,6 +63,15 @@ The deallocation event is formed as:
 where:
 X = long = Identifies the garbage collected object
 
+** Variable Store
+The variable store event is formed as:
+7 X Y Z
+
+where:
+X = LONG = stored obj
+Y = LONG = old value
+Z = STRING/LONG = CALLER/CALLEE
+
 * Benchmarks in Dacapo
   AVRORA
   BATIK
@@ -104,4 +113,8 @@ Verify error in eclipse
    Same as "Using Fields" + ECLIPSE
    (Eclipse can run with the -noverify option to java though)
    
+
+
+** Using Fields & Alloc & VARS
+*** avrora/tomcat/tradebeans/tradesoap still fails
 
