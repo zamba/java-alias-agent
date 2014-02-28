@@ -72,6 +72,17 @@ X = LONG = stored obj
 Y = LONG = old value
 Z = STRING/LONG = CALLER/CALLEE
 
+** Method Call
+The variable store event is formed as:
+4 X(Y) Z A K
+
+where:
+X = string = method name
+Y = string = method description
+Z = STRING/LONG = CALLER
+A = STRING/LONG = CALLEE
+K = LONG* = space separated tags that identifies
+            the arguments passed to this method
 * Benchmarks in Dacapo
   AVRORA
   BATIK
@@ -93,15 +104,12 @@ Z = STRING/LONG = CALLER/CALLEE
 ** DONE LOADFIELD
 ** DONE DEALLOC
 ** DONE ALLOC
-Avrora
-Batik
-Verify error in eclipse
-** TODO STOREVAR
+** DONE STOREVAR
 ** TODO METHODCALL
 ** TODO METHODRETURN
 
 
-
+   
 
 * Failing benchmarks
 ** Using Fields
@@ -109,12 +117,32 @@ Verify error in eclipse
    TOMCAT
    TRADEBEANS
    TRADESOAP
-** Using Fields & Alloc
+** Using Fields & Allocs
    Same as "Using Fields" + ECLIPSE
    (Eclipse can run with the -noverify option to java though)
    
 
 
-** Using Fields & Alloc & VARS
+** Using Fields & Allocs & VARS
 *** avrora/tomcat/tradebeans/tradesoap still fails
+
+** Using Fields & ALLOCs & VARS & METHODCALLS
+AVRORA FAIL
+BATIK COMPLETES
+ECLIPSE NULLPOINTEREXCEPTION
+
+
+
+
+
+
+
+WITH METHODCALLS
+===== DaCapo 9.12 batik starting =====
+===== DaCapo 9.12 batik PASSED in 509176 msec =====
+
+WITHOUT
+===== DaCapo 9.12 batik starting =====
+===== DaCapo 9.12 batik PASSED in 35353 msec =====
+
 
