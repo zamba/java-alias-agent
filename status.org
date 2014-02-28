@@ -108,7 +108,6 @@ K = LONG* = space separated tags that identifies
 ** TODO METHODCALL
 ** TODO METHODRETURN
 
-
    
 
 * Failing benchmarks
@@ -146,3 +145,20 @@ WITHOUT
 ===== DaCapo 9.12 batik PASSED in 35353 msec =====
 
 
+
+
+
+
+
+
+* List of things todo
+** TODO Instrument all classes
+   Find out why sigsegv occurs
+** TODO If Instrument all classes works. Reimplement NEW
+
+
+** TODO Implement variable overwrites
+** TODO Implement AASTOREs
+** Implement 
+
+  
