@@ -15,12 +15,10 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     private int newObj = 0;
     private String[] currentArr = null;
 
-    boolean methodEnter = false;
+    boolean methodEnter = true;
     boolean methodExit = false;
-
     boolean storeVar = true;
     boolean newObjs = true;
-
     boolean fieldUse = true;
 
 
@@ -532,8 +530,6 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	if (!methodEnter || disableAll) {
 	    return;
 	}
-
-
     	int parametersCounter = countParameters();
     	int[] parameters;
 
@@ -541,16 +537,9 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	mv.visitLdcInsn(des);          // #2
 	insertThisOrStatic();          // #3-4
 
-
 	if (parametersCounter > 0) {
 	    parameters = new int[parametersCounter];
 	    fillParameters(parameters);
-	    // if (met.equals("<init>") && klass.equals("org/sunflow/core/LightServer$1")) {
-	    // 	System.out.println(met + " " + des);
-	    // 	System.out.println(parametersCounter + " " + Arrays.toString(parameters));
-	    // }
-
-
 	    mv.visitIntInsn(BIPUSH,parameters.length);
 	    mv.visitTypeInsn(ANEWARRAY,"java/lang/Object"); // #5
 
@@ -584,7 +573,6 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 			   "Ljava/lang/Object;" +     // callee object  #4
 			   "[Ljava/lang/Object;" +    // args           #5
 			   "Ljava/lang/Thread;)V");   // current thread #6
-
     }
 
 
