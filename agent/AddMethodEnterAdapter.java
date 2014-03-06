@@ -16,7 +16,9 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     private String[] currentArr = null;
 
     boolean methodEnter = true;
-    boolean methodExit = false;
+
+    boolean methodExit = true;
+
     boolean storeVar = true;
     boolean newObjs = true;
     boolean fieldUse = true;
@@ -540,6 +542,15 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	if (parametersCounter > 0) {
 	    parameters = new int[parametersCounter];
 	    fillParameters(parameters);
+	    //System.err.println(klass);
+	    // if (klass.equals("org/eclipse/jdt/internal/core/DeltaProcessor$RootInfo") &&
+	    // 	met.equals("<init>")) {
+	    // 	System.err.println(klass + " " + des);
+	    // 	System.err.println("number of parameters: " + parametersCounter);
+	    // 	System.err.println(Arrays.toString(parameters));
+		
+	    // }
+	    
 	    mv.visitIntInsn(BIPUSH,parameters.length);
 	    mv.visitTypeInsn(ANEWARRAY,"java/lang/Object"); // #5
 
@@ -587,79 +598,84 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 /* Trivial workers                                                            */
 /******************************************************************************/
 
-    // Count parameters that are objects/arrays
+    // Counts parameters that are objects/arrays
     private int countParameters() {
 	if (des == null) {
 	    return 0;
 	}
     	int parameterCounter = 0;
     	int i = 1;
-    	char current;
-    	while ((current = des.charAt(i)) != ')') {
+	char current = des.charAt(i);
+    	while (current != ')') {
     	    if (current == '[') {
-    		if (des.charAt(i+1) != 'L') {
-    		    i = i + 2;
-    		}
+		parameterCounter++;
+		while (current == '[') {
+		    current = des.charAt(++i);
+		}
+    		if (current != 'L') {
+    		    current = des.charAt(++i);
+		}
     		else {
-    		    while (des.charAt(i+1) != ';') {
-    			i++;
+    		    while (current != ';') {
+    			current = des.charAt(++i);
     		    }
-    		    i++;
+    		    current = des.charAt(++i);
     		}
-    		parameterCounter++;
     	    }
     	    else if (current == 'L') {
-    		while (des.charAt(i) != ';') {
-    		    i++;
+		parameterCounter++;
+    		while (current != ';') {
+    		    current = des.charAt(++i);
     		}
-    		i++;
-    		parameterCounter++;
+    		current = des.charAt(++i);
     	    }
-
     	    else {
-    		i++;
+    		current = des.charAt(++i);
     	    }
     	}
     	return parameterCounter;
     }
 
-    // Fill arr with slot numbers that corresponds to where objects/arrays are
-    // located.
+    // Fills arr with numbers that corresponds to local variable 
+    // indices where objects/arrays are stored.
     private void fillParameters(int[]arr) {
 	if (des == null) 
 	    return;
     	int i = 1;
     	int arrayindex = 0;
     	int currentslot = 1;
-    	char current;
-    	while ((current = des.charAt(i)) != ')') {
+    	char current = des.charAt(i);
+    	while (current != ')') {
     	    if (current == '[') {
     		arr[arrayindex++] = currentslot++;
-    		if (des.charAt(i+1) != 'L') {
-    		    i = i+2;
+		while (current == '[') {
+		    current = des.charAt(++i);
+		}
+    		if (current != 'L') {
+    		    current = des.charAt(++i);
     		}
     		else {
-    		    while (des.charAt(i) != ';') {
-    			i++;
+    		    while (current != ';') {
+    			current = des.charAt(++i);
     		    }
-    		    i++;
+    		    current = des.charAt(++i);
     		}
     	    }
     	    else if (current == 'L') {
     		arr[arrayindex++] = currentslot++;
-    		while (des.charAt(i) != ';') {
-    		    i++;
+    		while (current != ';') {
+    		    current = des.charAt(++i);
     		}
-    		i++;
+    		current = des.charAt(++i);
 		
     	    }
     	    else if (current == 'D' || current == 'J') {
     		currentslot+=2;
-    	        i++;
+    	        current = des.charAt(++i);
     	    }
     	    else {
     		currentslot++;
-    		i++;
+    		current = des.charAt(++i);
     	    }
     	}
 	

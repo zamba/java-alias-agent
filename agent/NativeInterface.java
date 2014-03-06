@@ -67,6 +67,26 @@ public class NativeInterface {
 	return 0;
     }
 
+    // private static int[] localIndices = new int[10];
+    
+    // public static boolean exists(int n) {
+    // 	if (!localIndices)
+    // 	    return false;
+
+    // 	for (int x:localIndices) {
+    // 	    if (x == n)
+    // 		return true;
+    // 	}
+    // 	return false;
+    // }
+    
+    // public static void add(int n) {
+    // 	if (exists(n)) {
+    // 	    return;
+    // 	}
+	
+    // }
+
     public static native void empty();
 
     public static native void passObj(Object obj);
