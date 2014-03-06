@@ -105,7 +105,7 @@ K = LONG* = space separated tags that identifies
 ** DONE DEALLOC
 ** DONE ALLOC
 ** DONE STOREVAR
-** TODO METHODCALL
+** DONE METHODCALL
 ** TODO METHODRETURN
 
    
@@ -128,37 +128,24 @@ K = LONG* = space separated tags that identifies
 ** Using Fields & ALLOCs & VARS & METHODCALLS
 AVRORA FAIL
 BATIK COMPLETES
-ECLIPSE NULLPOINTEREXCEPTION
+ECLIPSE COMPLETES WITH 30x overhead
+
+
+** Using all events
+   eclipse 60x~ overhead
 
 
 
-
-
-
-
-WITH METHODCALLS
-===== DaCapo 9.12 batik starting =====
-===== DaCapo 9.12 batik PASSED in 509176 msec =====
-
-WITHOUT
-===== DaCapo 9.12 batik starting =====
-===== DaCapo 9.12 batik PASSED in 35353 msec =====
-
-
-
-
-
-
-
-
-* List of things todo
-** TODO Instrument all classes
-   Find out why sigsegv occurs
-** TODO If Instrument all classes works. Reimplement NEW
-
-
-** TODO Implement variable overwrites
+* TODOs
+** TODO Make use of zlib-dev instead of piping to gzip
+** TODO Reimplement variable overwrites
+** TODO Reimplement variable out of scopes
 ** TODO Implement AASTOREs
-** Implement 
 
-  
+** TODO Instrument classes loaded with bootstrapclassloader too
+   Find out why sigsegv occurs
+** TODO If above works. Reimplement NEW
+** TODO Extend command line options that handles instrumentation switches and output methods
+
+** TODO Calculate how big part of the objs that are aliased.
+** TODO Calculate how big part of the aliased obj that are ever used from multiple sources.
