@@ -20,15 +20,24 @@ ifeq ($(UNAME),Darwin)
 	LIBS = -stdlib=libc++
 endif
 
-all:
+all:		
+	${CC} -I. -O -c -fPIC -o gzstream.o gzstream.cpp
+	ar cr libgzstream.a gzstream.o
+
 	javac  $(JLIB) *.java
 	jar cf lib/awio.jar *.class
 	javah NativeInterface
 	rm -f *.class
 	$(CC) -std=c++11 -o ninja ninja.cpp
+#${CC} -c -fPIC -o gzstream.o gzstream.cpp -L. -lgzstream -lz
 	$(CC) -c -fPIC -std=c++11 $(LIBS) $(IFLAGS) alias.cpp eventlist.cpp test.cpp
-	$(CC) -shared $(LIBS) -o lib/testagent.so alias.o eventlist.o test.o
+	$(CC) -shared $(LIBS) -o lib/testagent.so alias.o eventlist.o test.o -L. -lgzstream -lz
 	rm -f *.o
+
+#gzstream.o : gzstream/gzstream.C gzstream/gzstream.h
+#${CC} -c -fPIC -I./gzstream -o gzstream.o gzstream/gzstream.C
+
+
 
 test:
 	@javac -d . test/*.java
@@ -59,5 +68,7 @@ clean:
 	@rm -rf lib/scratch
 	@rm -rf lib/awio.jar
 	@rm -f lib/testagent.so
+	@rm -f lib/libgzstream.so
+	@rm -f gzstream/gzstream.o
 
 .PHONY: clean test bench jartest

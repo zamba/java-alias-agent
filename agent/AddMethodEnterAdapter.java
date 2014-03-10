@@ -16,9 +16,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     private String[] currentArr = null;
 
     boolean methodEnter = true;
-
     boolean methodExit = true;
-
     boolean storeVar = true;
     boolean newObjs = true;
     boolean fieldUse = true;
