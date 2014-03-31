@@ -10,18 +10,18 @@ extern "C" {
 /*
  * Class:     NativeInterface
  * Method:    methodExit
- * Signature: (Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;Ljava/lang/Thread;)V
+ * Signature: (Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;[ILjava/lang/Thread;)V
  */
 JNIEXPORT void JNICALL Java_NativeInterface_methodExit
-  (JNIEnv *, jclass, jobject, jstring, jstring, jstring, jobject, jobjectArray, jobject);
+  (JNIEnv *, jclass, jobject, jstring, jstring, jobject, jintArray, jobject);
 
 /*
  * Class:     NativeInterface
  * Method:    methodEnter
- * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;Ljava/lang/Thread;)V
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;Ljava/lang/Thread;)V
  */
 JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
-  (JNIEnv *, jclass, jstring, jstring, jstring, jobject, jobjectArray, jobject);
+  (JNIEnv *, jclass, jstring, jstring, jobject, jobjectArray, jobject);
 
 /*
  * Class:     NativeInterface
@@ -34,42 +34,26 @@ JNIEXPORT void JNICALL Java_NativeInterface_newObj
 /*
  * Class:     NativeInterface
  * Method:    storeField
- * Signature: (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Thread;)V
+ * Signature: (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Thread;)V
  */
 JNIEXPORT void JNICALL Java_NativeInterface_storeField
-  (JNIEnv *, jclass, jobject, jobject, jobject, jstring, jstring, jstring, jstring, jobject, jobject);
+  (JNIEnv *, jclass, jobject, jobject, jobject, jstring, jstring, jstring, jobject, jobject);
 
 /*
  * Class:     NativeInterface
  * Method:    loadField
- * Signature: (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Thread;)V
- */
-JNIEXPORT void JNICALL Java_NativeInterface_loadField
-  (JNIEnv *, jclass, jobject, jobject, jstring, jstring, jstring, jstring, jobject, jobject);
-
-/*
- * Class:     NativeInterface
- * Method:    storeVar
  * Signature: (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Thread;)V
  */
-JNIEXPORT void JNICALL Java_NativeInterface_storeVar
+JNIEXPORT void JNICALL Java_NativeInterface_loadField
   (JNIEnv *, jclass, jobject, jobject, jstring, jstring, jstring, jobject, jobject);
 
 /*
  * Class:     NativeInterface
- * Method:    empty
- * Signature: ()V
+ * Method:    storeVar
+ * Signature: (Ljava/lang/Object;ILjava/lang/String;Ljava/lang/Object;Ljava/lang/Thread;)V
  */
-JNIEXPORT void JNICALL Java_NativeInterface_empty
-  (JNIEnv *, jclass);
-
-/*
- * Class:     NativeInterface
- * Method:    passObj
- * Signature: (Ljava/lang/Object;)V
- */
-JNIEXPORT void JNICALL Java_NativeInterface_passObj
-  (JNIEnv *, jclass, jobject);
+JNIEXPORT void JNICALL Java_NativeInterface_storeVar
+  (JNIEnv *, jclass, jobject, jint, jstring, jobject, jobject);
 
 #ifdef __cplusplus
 }

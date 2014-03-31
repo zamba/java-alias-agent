@@ -1,12 +1,8 @@
 /*
-I recommend using emacs' Hide Show mode or similar, when reading this code.
-
 TODO:
 * Rewrite native callbacks and event classes... eliminate std::strings.
 
- */
-
-
+*/
 
 #include <jvmti.h>
 #include <jni.h>
@@ -16,7 +12,6 @@ TODO:
 #include "test.h"
 #include "gzstream.h"
 
-//#include <boost/iostreams/stream.hpp>
 
 #define ALLOC 1
 #define GETFIELD 2
@@ -45,6 +40,10 @@ bool disableAll = false;
 
 bool test = false;
 int testnr = 0;
+
+
+int outofscope_errors = 0;
+int oldvar_errors = 0;
 
 const char *filename = "output";
 
@@ -126,28 +125,22 @@ string toCPS(JNIEnv *env,
 jlong get_tag(jobject obj) {
   jlong tag = 0;
   if (obj){
-    g_jvmti->GetTag(obj,&tag);
+    jvmtiError err = g_jvmti->GetTag(obj,&tag);
+    if (err != JVMTI_ERROR_NONE) {
+      fprintf(stderr,"ERROR:%d in get_tag() alias.cpp\n",err);
+      // cerr << "ERROR:" << to_string(err) << "in get_tag() alias.cpp\n";
+      tag = 0;
+    }
   }
   return tag;
 }
+
 
 
 /******************************************************************************/
 /* Event Callbacks                                                            */
 /******************************************************************************/
 
-
-JNIEXPORT void JNICALL Java_NativeInterface_passObj
-(JNIEnv *, jclass, jobject) {
-  
-}
-
-
-
-JNIEXPORT void JNICALL Java_NativeInterface_empty
-(JNIEnv *, jclass) {
-  printf("\n\nCALL TO EMPTY() in c++, from JAVA\n\n");
-}
 
 /*
    TODO:
@@ -158,7 +151,6 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
 (JNIEnv *env,
  jclass nativeinterfacecls,
  jstring met,
- jstring desc,
  jstring staticcallee,
  jobject callee,
  jobjectArray args,
@@ -166,17 +158,15 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
 {
   enter_critical_section(); {
     if (!test) {
-      //export method name and description
+      //export method name
       const char *c_name = env->GetStringUTFChars(met, NULL);
-      const char *c_desc = env->GetStringUTFChars(desc, NULL);
       if (gz) {
-	out << to_string(METHODCALL) << " " << c_name << "(" << c_desc << ")";
+	out << to_string(METHODCALL) << " " << c_name << " ";
       }
       else {
-	fprintf(pFile,"%d %s(%s) ",METHODCALL,c_name,c_desc);
+	fprintf(pFile,"%d %s ",METHODCALL,c_name);
       }
       env->ReleaseStringUTFChars(met, c_name);
-      env->ReleaseStringUTFChars(desc, c_desc);
 
 
       //export caller
@@ -210,7 +200,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
 	      out << gen_name;
 	    }
 	    else {
-	      fprintf(pFile,"%s",gen_name);
+	      fprintf(pFile,"%s ",gen_name);
 	    }
       	    g_jvmti->Deallocate((unsigned char *)gen_name);
       	    if (source_name) {
@@ -222,7 +212,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
 	      out << source_name;
 	    }
 	    else {
-	      fprintf(pFile,"%s",source_name);
+	      fprintf(pFile,"%s ",source_name);
 	    }
       	    g_jvmti->Deallocate((unsigned char *)source_name);
       	  }
@@ -244,6 +234,14 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
       	  }
       	}
       }
+	else {
+	  if (gz) {
+	    out << "- ";
+	  }
+	  else {
+	    fprintf(pFile,"%s","- ");
+	  }
+	}
 
 
     if (frame) {
@@ -257,7 +255,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
 	  out << to_string(callee_tag);
 	}
 	else {
-	  fprintf(pFile,"%ld",callee_tag);
+	  fprintf(pFile,"%ld ",callee_tag);
 	}
       }
       else if (callee_tag == 0 && staticcallee != NULL) {
@@ -266,7 +264,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
 	  out << c_callee;
 	}
 	else {
-	  fprintf(pFile,"%s",c_callee);
+	  fprintf(pFile,"%s ",c_callee);
 	}
       	env->ReleaseStringUTFChars(staticcallee, c_callee);
       }
@@ -277,7 +275,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
 	  out << to_string(callee_tag);
 	}
 	else {
-	  fprintf(pFile,"%ld",callee_tag);
+	  fprintf(pFile,"%ld ",callee_tag);
 	}
       }
 
@@ -296,7 +294,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
 
     	  if (current_tag > 0) {
 	    if (gz) {
-	      out << to_string(current_tag);
+	      out << to_string(current_tag) << " ";
 	    }
 	    else {
 	      fprintf(pFile,"%ld ",current_tag);
@@ -306,14 +304,11 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
     	    /* generate new event */
     	    g_jvmti->SetTag(current,g_objectid++);
 	    if (gz) {
-	      out << to_string(g_objectid-1);
+	      out << to_string(g_objectid-1) << " ";
 	    }
 	    else {
 	      fprintf(pFile,"%ld ",g_objectid - 1);
 	    }
-    	    // if (alloc && !disableAll) {
-    	    //   fprintf(pFile,"%d %ld N/A -",ALLOC,g_objectid - 1);
-    	    // }
     	  }
     	}
       }
@@ -333,7 +328,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
 
     else {
       string cp_name = toCPS(env,met);
-      string cp_desc = toCPS(env,desc);
+      string cp_desc = "";
       jlong callee_tag = get_tag(callee);
       string cp_callee;
       if (callee_tag == 0) {
@@ -355,7 +350,6 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
 
 	jint access_flags = 0;
 	g_jvmti->GetMethodModifiers(frame[1].method,&access_flags);
-	//printf("calling met: %s access flags: %d \n",methodName2, access_flags);
 
 	if ((access_flags & 8) != 0) {
 	  jclass declaring_class;
@@ -435,40 +429,47 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
    TODO:
    * Move get caller part to a separate function
    * Move get out of scope objs to a separate function
+
+   Getting errors when loading some outofscopes...
+   JVMTI_ERROR_INVALID_SLOT (35)
+   Invalid slot.
+   jvmti error:35
    */
 JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 (JNIEnv *env,
- jclass nativeinterfacecls,
+ jclass nativeinterface_cls,
  jobject returned,
  jstring met,
- jstring desc,
  jstring staticcallee,
  jobject callee,
- jobjectArray outOfScopes,
+ jintArray statusArray,
  jthread thread ) 
 {
+  int a = 0;
+
   if (returns && !disableAll) {
     enter_critical_section(); {
       if (!test) {
 	//export method name and description
 	const char *c_name = env->GetStringUTFChars(met, NULL);
-	const char *c_desc = env->GetStringUTFChars(desc, NULL);
+	if (strcmp(c_name,"apa")==0)
+	  a =1;
 	if (gz) {
-	  out << to_string(RETURN) << " " << c_name << "(" << c_desc << ")";
+	  out << to_string(RETURN) << " " << c_name << " ";
 	}
 	else {
-	  fprintf(pFile,"%d %s(%s) ",RETURN,c_name,c_desc);
+	  fprintf(pFile,"%d %s ",RETURN,c_name);
 	}
+	// fprintf(stderr,"%s ",c_name);
 	env->ReleaseStringUTFChars(met, c_name);
-	env->ReleaseStringUTFChars(desc, c_desc);
 
 	//export returned obj's tag
 	jlong returned_tag = get_tag(returned);
 	if (gz) {
-	  out << to_string(returned_tag);
+	  out << to_string(returned_tag) << " ";
 	}
 	else {
-	  fprintf(pFile,"%ld",returned_tag);
+	  fprintf(pFile,"%ld ",returned_tag);
 	}
 
 	//export caller
@@ -502,7 +503,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 		out << gen_name;
 	      }
 	      else {
-		fprintf(pFile,"%s",gen_name);
+		fprintf(pFile,"%s ",gen_name);
 	      }
 	      g_jvmti->Deallocate((unsigned char *)gen_name);
 	      if (source_name) {
@@ -511,10 +512,10 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 	    }
 	    else if (source_name) {
 	      if (gz) {
-		out << source_name;
+		out << source_name << " ";
 	      }
 	      else {
-		fprintf(pFile,"%s",source_name);
+		fprintf(pFile,"%s ",source_name);
 	      }
 	      g_jvmti->Deallocate((unsigned char *)source_name);
 	    }
@@ -532,11 +533,18 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 		caller_tag = g_objectid++;
 		g_jvmti->SetTag(callerobj,caller_tag);
 	      }
-	      //fprintf(pFile,"%ld",caller_tag);
+	      fprintf(pFile,"%ld ",caller_tag);
 	    }
 	  }
 	}
-
+	else {
+	  if (gz) {
+	    out << "- ";
+	  }
+	  else {
+	    fprintf(pFile,"%s","- ");
+	  }
+	}
 
 	if (frame) {
 	  g_jvmti->Deallocate((unsigned char *)frame);
@@ -546,19 +554,19 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 	jlong callee_tag = get_tag(callee);
 	if (callee_tag > 0) {
 	  if (gz) {
-	    out << to_string(callee_tag);
+	    out << to_string(callee_tag) << " ";
 	  }
 	  else {
-	    fprintf(pFile,"%ld",callee_tag);
+	    fprintf(pFile,"%ld ",callee_tag);
 	  }
 	}
 	else if (callee_tag == 0 && staticcallee != NULL) {
 	  const char *c_callee = env->GetStringUTFChars(staticcallee, NULL);
 	  if (gz) {
-	    out << c_callee;
+	    out << c_callee << " ";
 	  }
 	  else {
-	    fprintf(pFile,"%s",c_callee);
+	    fprintf(pFile,"%s ",c_callee);
 	  }
 	  env->ReleaseStringUTFChars(staticcallee, c_callee);
 	}
@@ -566,48 +574,45 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 	  callee_tag = g_objectid++;
 	  g_jvmti->SetTag(callee,callee_tag);
 	  if (gz) {
-	    out << to_string(callee_tag);
+	    out << to_string(callee_tag) << " ";
 	  }
 	  else {
-	    fprintf(pFile,"%ld",callee_tag);
+	    fprintf(pFile,"%ld ",callee_tag);
 	  }
 	}
 
-	//export out of scopes
-	int objcount = 0;
-	if (outOfScopes) {
-	  objcount = env->GetArrayLength(outOfScopes);
-	}
-	if (objcount > 0) {
-	  for (int i=0;i < objcount;i++){
-	    jobject current = env->GetObjectArrayElement((jobjectArray)outOfScopes, i);
-	    jlong current_tag = 0;
-	    g_jvmti->GetTag(current,&current_tag);
-	    env->DeleteLocalRef(current);
+	if (statusArray) {
+	  const jsize length = env->GetArrayLength(statusArray);
+	  if (length > 0) {
+	    // fprintf(stderr,"length %d ",length);
+	    jint *outs = env->GetIntArrayElements(statusArray, NULL);
+	    for (int i = 0; i < length ; i++) {
+	      if (outs[i] != -1) {
 
-	    if (current_tag > 0) {
-	      if (gz) {
-		out << to_string(current_tag);
-	      }
-	      else {
-		fprintf(pFile,"%ld ",current_tag);
+		// fprintf(stderr,"%d ",outs[i]);
+
+		jobject temp_obj;
+		jvmtiError error = g_jvmti->GetLocalObject(thread,1,outs[i],&temp_obj);
+		if (error == JVMTI_ERROR_NONE) {
+		  jlong temp_tag = get_tag(temp_obj);
+		  if (temp_tag > 0) {
+		    fprintf(pFile,"%ld ",temp_tag);
+		  }
+		  env->DeleteLocalRef(temp_obj);
+		}
+		else {
+		  outofscope_errors++;
+		  //fprintf(stderr,"error:%d jvmti->GetLocalObject\n",error);
+		}
 	      }
 	    }
-	    else {
-	      /* generate new event */
-	      g_jvmti->SetTag(current,g_objectid++);
-	      if (gz) {
-		out << to_string(g_objectid-1);
-	      }
-	      else {
-		fprintf(pFile,"%ld ",g_objectid - 1);
-	      }
-	      // if (alloc && !disableAll) {
-	      // 	fprintf(pFile,"%d %ld N/A -",ALLOC,g_objectid - 1);
-	      // }
-	    }
+	    env->ReleaseIntArrayElements(statusArray, outs,JNI_ABORT);
+
 	  }
 	}
+
+
+
 	if (gz) {
 	  out << "\n";
 	}
@@ -619,7 +624,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 	jlong returned_tag = get_tag(returned);
 	jlong callee_tag = get_tag(callee);
 	string cp_method = toCPS(env,met);
-	string cp_desc = toCPS(env,desc);
+	string cp_desc = "";
 	string cp_staticcallee;
 	if (callee_tag == 0) {
 	  cp_staticcallee = toCPS(env,staticcallee);
@@ -640,8 +645,6 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 
 	  jint access_flags = 0;
 	  g_jvmti->GetMethodModifiers(frame[1].method,&access_flags);
-	  //printf("calling met: %s access flags: %d \n",methodName2, access_flags);
-	  // flags == 9
 	  if ((access_flags & 8) != 0) {
 	    jclass declaring_class;
 	    char *source_name;
@@ -653,10 +656,10 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 	    if (error != JVMTI_ERROR_NONE) {
 	      printf("errrrrrrror");
 	    }
-	    //strcat(source_name,methodName2);
+
 	    cp_staticcaller = source_name;
 	    cp_staticcaller.append(methodName2);
-	    //cp_staticcallercaller = source_name;
+
 	    if (source_name) {
 	      g_jvmti->Deallocate((unsigned char *)source_name);
 	    }
@@ -672,23 +675,17 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 	    }
 	  }
 	}
+	else {
+	  if (gz) {
+	    out << "- ";
+	  }
+	  else {
+	    fprintf(pFile,"%s","- ");
+	  }
+	}
 
 	unsigned long *outobjs = NULL;
 	int objcounter = 0;
-	if (outOfScopes) {
-	  objcounter = env->GetArrayLength(outOfScopes);
-	}
-	if (objcounter > 0) {
-	  outobjs = new unsigned long[objcounter];
-	  for (int i=0;i < objcounter;i++){
-	    jobject current = env->GetObjectArrayElement((jobjectArray)outOfScopes, i);
-	    jlong current_tag = 0;
-	    g_jvmti->GetTag(current,&current_tag);
-	    if (current_tag > 0) {
-	      outobjs[i] = current_tag;
-	    }
-	  }
-	}
 	Returned *event = new Returned(cp_method,
 				       cp_desc,
 				       cp_staticcallee,
@@ -706,30 +703,59 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 
 /* 
    TODO:
+   * jvmtiError error = g_jvmti->GetLocalObject(thread,1,oldie,&old_obj);
+    error == 35 JVMTI_ERROR_INVALID_SLOT... WHY?
 */
 JNIEXPORT void JNICALL Java_NativeInterface_storeVar
 (JNIEnv *env,
  jclass native_interface,
  jobject stored,
- jobject old,
- jstring method,
- jstring desc,
+ jint oldie,
  jstring static_callee,
  jobject callee,
  jthread thread) 
 {
+  int a = 0;
   if (storeVar && !disableAll) {
     enter_critical_section(); {
       if (!test) {
+	// export stored obj
 	jlong stored_tag = get_tag(stored);
-	jlong old_tag = get_tag(old);
 	jlong callee_tag = get_tag(callee);
 	if (gz) {
-	  out << to_string(STOREVAR) << " " << to_string(stored_tag) << " " << to_string(old_tag);
+	  out << to_string(STOREVAR) << " " << to_string(stored_tag) << " ";
 	}
 	else {
-	  fprintf(pFile,"%d %ld %ld ",STOREVAR,stored_tag,old_tag);
+	  fprintf(pFile,"%d %ld ",STOREVAR,stored_tag);
 	}
+	if (stored_tag==17)
+	  a =1;
+
+	if (oldie != -1) {
+	  jobject old_obj;
+	  jlong old_tag;
+	  jvmtiError error = g_jvmti->GetLocalObject(thread,1,oldie,&old_obj);
+	  if (error != JVMTI_ERROR_NONE) {
+	    // fprintf(stderr,"ERROR:%d slot:%d || storeVar() alias.cpp\n",error,oldie);
+	    oldvar_errors++;
+	    fprintf(pFile,"0 ");
+	  }
+	  else {
+	    // fprintf(stderr,"NOERROR:%d || storeVar() alias.cpp\n",error);
+	    jvmtiError err = g_jvmti->GetTag(old_obj,&old_tag);
+	    if (err == JVMTI_ERROR_NONE) {
+	      fprintf(pFile,"%ld ",old_tag);
+	    }
+	    else {
+	      fprintf(pFile,"0 "); 
+	    }
+	  }
+	}
+	else {
+	  fprintf(pFile,"0 "); 
+	}
+
+
 	if (callee_tag == 0 && static_callee) {
 	  const char *c_name = env->GetStringUTFChars(static_callee, NULL);
 	  if (gz) {
@@ -752,9 +778,9 @@ JNIEXPORT void JNICALL Java_NativeInterface_storeVar
       else {
 	jlong stored_tag = get_tag(stored);
 	jlong callee_tag = get_tag(callee);
-	jlong old_tag = get_tag(old);
-	string cp_method = toCPS(env,method);
-	string cp_desc = toCPS(env,desc);
+	jlong old_tag = 0;
+	string cp_method = "";
+	string cp_desc = "";
 	string cp_callee;
 	if (callee_tag == 0) {
 	  cp_callee = toCPS(env,static_callee);
@@ -784,12 +810,10 @@ JNIEXPORT void JNICALL Java_NativeInterface_storeField
  jobject old_value,
  jstring owner,
  jstring name,
- jstring desc,
  jstring static_caller,
  jobject caller,
  jthread thread) 
 {
-
   if (storeField && !disableAll) {
     enter_critical_section(); {
       
@@ -797,15 +821,16 @@ JNIEXPORT void JNICALL Java_NativeInterface_storeField
 	jlong new_val = get_tag(value);
 	jlong old_val = get_tag(old_value);
 	const char *c_name = env->GetStringUTFChars(name, NULL);
-	const char *c_desc = env->GetStringUTFChars(desc, NULL);
+
 	if (gz) {
-	  out << to_string(STOREFIELD)<<" "<<c_name<<"("<<c_desc<<") "<<to_string(new_val) << " " << to_string(old_val);
+	  out << to_string(STOREFIELD) << " " << c_name << " " << 
+	    to_string(new_val) << " " << to_string(old_val) << " ";
 	}
 	else {
-	  fprintf(pFile,"%d %s(%s) %ld %ld ",STOREFIELD,c_name,c_desc,new_val,old_val);
+	  fprintf(pFile,"%d %s %ld %ld ",STOREFIELD,c_name,new_val,old_val);
 	}
 	env->ReleaseStringUTFChars(name, c_name);
-	env->ReleaseStringUTFChars(desc, c_desc);
+
 
 
 	jlong caller_tag = get_tag(caller);
@@ -858,7 +883,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_storeField
 	jlong value_tag = get_tag(value);
 	jlong old_value_tag = get_tag(old_value);
 	string cp_field = toCPS(env,name);
-	string cp_desc = toCPS(env,desc);
+	string cp_desc = "";
 
 	string cp_callee;
 	if (callee_tag == 0) {
@@ -894,7 +919,6 @@ JNIEXPORT void JNICALL Java_NativeInterface_loadField
  jobject value,
  jstring owner,
  jstring name,
- jstring desc,
  jstring static_caller,
  jobject caller,
  jthread thread)
@@ -905,15 +929,15 @@ JNIEXPORT void JNICALL Java_NativeInterface_loadField
       if (!test) { 
 	jlong new_val = get_tag(value);
 	const char *c_name = env->GetStringUTFChars(name, NULL);
-	const char *c_desc = env->GetStringUTFChars(desc, NULL);
 	if (gz) {
-	  out << to_string(GETFIELD)<<" "<<c_name<<"("<<c_desc<<") "<<to_string(new_val) << " " << " ";
+	  out << to_string(GETFIELD) << " " << c_name << " " << 
+	    to_string(new_val) << " ";
 	}
 	else {
-	  fprintf(pFile,"%d %s(%s) %ld ",GETFIELD,c_name,c_desc,new_val);
+	  fprintf(pFile,"%d %s %ld ",GETFIELD,c_name,new_val);
 	}
 	env->ReleaseStringUTFChars(name, c_name);
-	env->ReleaseStringUTFChars(desc, c_desc);
+
 
 
 	jlong caller_tag = get_tag(caller);
@@ -965,7 +989,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_loadField
 	jlong value_tag = get_tag(value);
 
 	string cp_field = toCPS(env,name);
-	string cp_desc = toCPS(env,desc);
+	string cp_desc = "";
 
 	string cp_callee;
 	if (callee_tag == 0) {
@@ -1193,6 +1217,9 @@ void JNICALL
 cbObjectFree(jvmtiEnv *jvmti_env,
 	     jlong tag)
 {
+  // if (g_dead || !g_init) {
+  //   return;
+  // }
   if (!test) {
     if (gz) {
       out << to_string(DEALLOC) << " " <<to_string(tag) << "\n";
@@ -1209,9 +1236,16 @@ cbObjectFree(jvmtiEnv *jvmti_env,
 
 
 /******************************************************************************/
-/* JVMTI System Callbacks                                                     */
+ /* JVMTI System Callbacks
+   Callbacks from the JVM to the agent.
+
+   * Agent_OnLoad is automatically invoked by the JVM if the agentflag is passed
+   to JAVA.
+
+   * The rest are set to be invoked in Agent_OnLoad. */
 /******************************************************************************/
 
+static int counter = 0;
 
 /*
   Sent by the VM when a classes is being loaded into the VM
@@ -1233,39 +1267,51 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
 		  jint* new_class_data_len,
 		  unsigned char** new_class_data) 
 {
-    if (!class_data || !name) {
-      return;
-    }
-    if(!g_init || g_dead || !loader) {
-      return;
-    }
-    
-    // Avoid transformation of instrument classes
-    const char *result = strstr(name,"org/objectweb/asm/");
-    if(result
-       || strcmp(name,"AddMethodEnterAdapter") == 0
-       || strcmp(name,"NativeInterface") == 0
-       || strcmp(name,"AddMethodAdapter") == 0
-       || strcmp(name,"Instrument") == 0) {
-      return;
-    }
-    const char *res = strstr(name,"org/cliffc/");
-    if (res) {
-      return;
-    }
-
-   
-
-    // int n = 359;
-    // // printf("c++ %d %s\n",counter,name);
-    // if(counter > n) {
-    //   if (counter == n + 1) { 
-
-    //   }
-    //   return;
-    // }
+  if (!class_data || !name) {
+    return;
+  }
   enter_critical_section(); {
+    if(!g_init || g_dead) {
 
+      exit_critical_section();
+      return;
+    }
+    if (test && !loader) {
+      exit_critical_section();
+      return;
+    }
+  }exit_critical_section();
+
+
+
+  // int z = 350;
+  // if (counter >= z) {
+  //   if (counter++ == (z)) {
+  //     printf("HOOK Not instrumenting: %s %d %d\n",name, counter - 1,phase);
+  //   }
+  //   exit_critical_section();
+  //   return;
+  // }
+  // counter++;
+
+
+    // cerr << "fileloadhook "  << name << "\n";
+    // Avoid transformation of instrument classes
+  const char *result = strstr(name,"org/objectweb/asm/");
+  if(result
+     || strcmp(name,"AddMethodEnterAdapter") == 0
+     || strcmp(name,"NativeInterface") == 0
+     || strcmp(name,"AddMethodAdapter") == 0
+     || strcmp(name,"Instrument") == 0
+     || strcmp(name,"MyClassWriter") == 0
+     || strcmp(name,"LocalVariableTableXYZ") == 0) {
+    return;
+  }
+
+  enter_critical_section(); {
+    // jvmtiPhase phase;
+    // g_jvmti->GetPhase(&phase);
+    // fprintf(stderr,"%s %d \n",name,phase);
 
     jbyteArray barr = jni->NewByteArray(class_data_len);
 
@@ -1316,10 +1362,6 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
    and stores it in g_mid.
 
    * Sets init to 1 to indicate the VM init
-
-   Return values:
-   JNI_OK -> JVM will continue
-   JNI_ERR -> JVM will disrupt initialization
 
    TODO:
    CHECK FOR ERRORS
@@ -1386,11 +1428,12 @@ Agent_OnLoad(JavaVM *vm,
 	     char *options,
 	     void *reserved)
 {
-  
+  if (gz) {
     if ( ! out.good()) {
       std::cerr << "ERROR: Opening file `" << filename << "' failed.\n";
-	return JNI_ERR;
+      return JNI_ERR;
     }
+  }
 
 
 
@@ -1401,7 +1444,7 @@ Agent_OnLoad(JavaVM *vm,
   jvmtiEnv *jvmti;
 
   parse_options(options);
-
+  // cerr << "agent started\n";
   // Get jvmti env
   res = vm->GetEnv((void **)&jvmti, JVMTI_VERSION);
   if(res != JNI_OK){
@@ -1498,4 +1541,10 @@ Agent_OnUnload(JavaVM *vm)
       fclose (pFile);
     }
   }
+  if (oldvar_errors || outofscope_errors) {
+    cout << "Number of oldvar errors:" << to_string(oldvar_errors) << "\n";
+    cout << "Number of outofscope errors:" << to_string(outofscope_errors) << "\n";
+  }
+    cout << "Number of oldvar errors:" << to_string(oldvar_errors) << "\n";
+    cout << "Number of outofscope errors:" << to_string(outofscope_errors) << "\n";
 }

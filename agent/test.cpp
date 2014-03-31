@@ -7,13 +7,14 @@ using namespace std;
 bool test_allocation(list<Event *> list)
 {
   int nr = 0;
-    for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
-      if ((*it)->getType() == 1)
-	nr++;
-    }
-    printf("%d\n\n",nr);
-    if (nr == 6)
-      return true;
+  for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
+    if ((*it)->getType() == 1)
+      nr++;
+  }
+  if (nr == 6)
+    return true;
+
+  cout << "Expected:6 Found:" << to_string(nr) << endl;
   return false;
 }
 
@@ -24,24 +25,28 @@ bool test_allocation(list<Event *> list)
 bool field_store(list<Event *> list)
 {
   int nr = 0;
-    for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
-      if ((*it)->getType() == 3)
-	nr++;
-    }
-    if (nr == 5)
-      return true;
+  for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
+    if ((*it)->getType() == 3)
+      nr++;
+  }
+  if (nr == 5)
+    return true;
+
+  cout << "Expected:5 Found:" << to_string(nr) << endl;
   return false;
 }
 
 bool field_load(list<Event *> list)
 {
   int nr = 0;
-    for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
-      if ((*it)->getType() == 2)
-	nr++;
-    }
-    if (nr == 5)
-      return true;
+  for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
+    if ((*it)->getType() == 2)
+      nr++;
+  }
+  if (nr == 5)
+    return true;
+
+  cout << "Expected:5 Found:" << to_string(nr) << endl;
   return false;
 }
 
@@ -53,13 +58,14 @@ bool field_load(list<Event *> list)
 bool method_call(list<Event *> list)
 {
   int nr = 0;
-    for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
-      if ((*it)->getType() == 4)
-	nr++;
-    }
-    if (nr == 12)
-      return true;
+  for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
+    if ((*it)->getType() == 4)
+      nr++;
+  }
+  if (nr == 12)
+    return true;
 
+  cout << "Expected:12 Found:" << to_string(nr) << endl;
   return false;
 }
 
@@ -67,14 +73,15 @@ bool method_call(list<Event *> list)
 bool returned(list<Event *> list)
 {
   int nr = 0;
-    for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
-      if ((*it)->getType() == 6)
-	nr++;
-    }
+  for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
+    if ((*it)->getType() == 6)
+      nr++;
+  }
 
-    if (nr == 12)
-      return true;
+  if (nr == 12)
+    return true;
 
+  cout << "Expected:12 Found:" << to_string(nr) << endl;
   return false;
 }
 
@@ -85,12 +92,14 @@ bool returned(list<Event *> list)
 bool variable_store(list<Event *> list)
 {
   int nr = 0;
-    for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
-      if ((*it)->getType() == 7)
-	nr++;
-    }
-    if (nr == 4)
-      return true;
+  for (std::list<Event*>::iterator it=list.begin(); it != list.end(); ++it) {
+    if ((*it)->getType() == 7)
+      nr++;
+  }
+  if (nr == 4)
+    return true;
+    
+  cout << "Expected:4 Found:" << to_string(nr) << endl;
   return false;
 }
 

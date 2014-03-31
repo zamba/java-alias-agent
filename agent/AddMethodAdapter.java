@@ -43,17 +43,40 @@ public class AddMethodAdapter extends ClassVisitor implements Opcodes {
     	owner = name;
     	isInterface = (access & ACC_INTERFACE) != 0;
 	isAnonymous = isAnonymous(name);
-	// isSynthetic = isSynthetic(superName);
+
 
     }
 
 
 
-
+    
 
     @Override public MethodVisitor visitMethod(int access, String name,
     					       String desc, String signature, String[] exceptions) {
     	MethodVisitor mv = cv.visitMethod(access, name, desc, signature,exceptions);
+
+	        //name.equals("<clinit>")
+		// || name.equals("<init>")
+		// || name.equals("getManifest")
+		// || name.equals("getManifestFromReference")
+		// || name.equals("getMetaInfEntryNames")
+		// || name.equals("getJarEntry")
+		// || name.equals("getEntry")
+		// || name.equals("entries")
+		// || name.equals("maybeInstantiateVerifier")
+		// || name.equals("initializeVerifier")
+		// || name.equals("getBytes")
+		// || name.equals("getInputStream")
+		// || name.equals("getManEntry")
+		// || name.equals("hasClassPathAttribute")
+
+	if (owner.indexOf("java/util/jar/JarFile") != -1) {
+	    // System.out.println(owner);
+	    if (
+		 name.equals("isKnownToNotHaveClassPathAttribute")) {
+		    // return mv;
+		}
+	}
 
     	if ((access & ACC_DEPRECATED) != 0)
     	    return mv;

@@ -70,5 +70,6 @@ clean:
 	@rm -f lib/testagent.so
 	@rm -f lib/libgzstream.so
 	@rm -f gzstream/gzstream.o
+	@rm -f libgzstream.a
 
 .PHONY: clean test bench jartest

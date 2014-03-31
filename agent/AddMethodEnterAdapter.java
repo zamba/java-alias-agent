@@ -1,7 +1,6 @@
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.AdviceAdapter;
 import java.util.Arrays;
-import java.util.LinkedList;
 
 
 public class AddMethodEnterAdapter extends AdviceAdapter {
@@ -9,20 +8,26 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     private String met;
     private String des;
     private String klass;
-
-    boolean isMetStatic = false;
+    
+    private boolean isMetStatic = false;
 
     private int newObj = 0;
     private String[] currentArr = null;
+    
+    private boolean jsr = false;
 
-    boolean methodEnter = true;
-    boolean methodExit = true;
-    boolean storeVar = true;
-    boolean newObjs = true;
-    boolean fieldUse = true;
+    private boolean methodEnter = true;
+    private boolean methodExit = true;
+    private boolean storeVar = true;
+    private boolean newObjs = true;
+    private boolean fieldUse = true;
+    private boolean disableAll = false;
 
+    private int varStatus = 0;
+    private int varStatus2 = 0;
+    private int localIndex;
 
-    boolean disableAll = false;
+    private int maxParID = 0;
 
     protected AddMethodEnterAdapter(int access, String name, String desc,
 				 MethodVisitor mv, String owner) {
@@ -31,10 +36,60 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	des = desc;
 	klass = owner;	
 	isMetStatic = isStatic(methodAccess);
+	getMaxParameterSlot();
+	
     }
 
-    boolean isStatic(int access) {
+    private boolean isStatic(int access) {
     	return (access & ACC_STATIC) != 0;
+    }
+
+    private void getMaxParameterSlot() {
+	if (des == null)
+	    return;
+
+	int max = 0;
+	if (!isMetStatic) 
+	    max = 1;
+
+	int counter = 1;
+	char current;
+
+	while ((current = des.charAt(counter)) != ')') {
+	    switch (current) {
+	    case '[':
+		max++;
+		while (current == '[') {
+		    counter++;
+		    current = des.charAt(counter);
+		}
+		if (current == 'L') {
+		    while (current != ';') {
+			counter++;
+			current = des.charAt(counter);
+		    }
+		}
+		break;
+	    case 'L':
+		max++;
+		while (current != ';') {
+		    counter++;
+		    current = des.charAt(counter);
+		}
+		break;
+		
+		
+	    default:
+		max++;
+		if (current == 'J' || current == 'D') {
+		    max++;
+		}
+		break;
+	    }
+	    counter++;
+	}
+
+	maxParID = max;
     }
 
 /******************************************************************************/
@@ -79,7 +134,6 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     }
 
     public void insertNewCode(String desc) {
-
 	dup();
 	push(desc);
 	swap();
@@ -91,7 +145,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
 
 
-    public void visitTypeInsn(int opcode,
+    @Override public void visitTypeInsn(int opcode,
 			      String type) {
 	if (!newObjs || disableAll) {
 	    super.visitTypeInsn(opcode,type);
@@ -120,7 +174,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
 
     
-    public void visitMethodInsn(int opcode,
+    @Override public void visitMethodInsn(int opcode,
 				String owner,
 				String name,
 				String desc) {
@@ -151,7 +205,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     }
 
 
-    public void visitIntInsn(int opcode,
+    @Override public void visitIntInsn(int opcode,
 			     int operand) {
 	if (!newObjs || disableAll) {
 	    super.visitIntInsn(opcode,operand);
@@ -183,7 +237,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     }
 
 
-    public void visitMultiANewArrayInsn(String desc,
+    @Override public void visitMultiANewArrayInsn(String desc,
 					int dims) {
 	if (!newObjs || disableAll) {
 	    super.visitMultiANewArrayInsn(desc,dims);
@@ -194,82 +248,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     }
 
 
-/******************************************************************************/
-/* store/load var                                                             */
-/******************************************************************************/
-    boolean jsr = false;
-    public void visitJumpInsn(int opcode,
-			      Label label) {
-	if (opcode == JSR) {
-	    jsr = true;
-	}
-	super.visitJumpInsn(opcode,label);
-    }
 
-    /*
-      Possible OPCODES:
-      ILOAD, LLOAD, FLOAD, DLOAD, ALOAD, ISTORE, LSTORE, FSTORE, DSTORE, ASTORE, RET
-
-      Inserting methodcalls to callbacks when OPCODE == ALOAD/ASTORE
-
-     */
-    @Override public void visitVarInsn(int opcode,
-				       int var) {
-	if (!storeVar || disableAll) {
-	    super.visitVarInsn(opcode,var);
-	    return;
-	}
-	if (opcode == ASTORE) {
-	    if (jsr) {
-		jsr = false;
-		super.visitVarInsn(opcode,var);
-		return;
-	    }
-	    // visitVarInsn(ALOAD,var);
-
-	    // mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","passObj",
-	    // 		       "(Ljava/lang/Object;)V");
-
-
-	    dup(); // #1
-	    if (true) {
-	    	push((String)null); //#2
-	    }
-	    else {
-	    	// PROBLEMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
-	    	// --------------------------------------
-	    	mv.visitVarInsn(ALOAD,var); //#2
-	    	// --------------------------------------
-	    }
-
-
-	    // push((String) null); // #3
-	    // push((String) null); //#4
-	    // push((String) null); // #5
-	    // push((String) null); // #6
-	    // push((String) null); //#7
-
-	    push(met); // #3
-	    push(des); // #4
-	    insertThisOrStatic(); // #5,6
-	    mv.visitMethodInsn(INVOKESTATIC,
-	    		       "java/lang/Thread",
-	    		       "currentThread",
-	    		       "()Ljava/lang/Thread;"); // #7
-
-	    mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","storeVar",
-	    		       "(Ljava/lang/Object;" +    // stored obj      #1
-	    		       "Ljava/lang/Object;" +	 // old value        #2		       
-	    		       "Ljava/lang/String;" +     // method name     #3
-	    		       "Ljava/lang/String;" +     // method desc     #4
-	    		       "Ljava/lang/String;" +     // callee static   #5
-	    		       "Ljava/lang/Object;" +     // callee obj      #6
-	    		       "Ljava/lang/Thread;)V");   // current thread  #7
-	    // mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","empty",
-	    // 		       "()V");
-	}
-    	super.visitVarInsn(opcode,var);
-    }
 
 
 
@@ -290,7 +269,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 			       "Ljava/lang/Object;" +     // old value       #3
 			       "Ljava/lang/String;" +     // caller static   #4
 			       "Ljava/lang/String;" +     // caller static   #5
-			       "Ljava/lang/String;" +     // caller static   #6
+			       // "Ljava/lang/String;" +     // desc   #6
 			       "Ljava/lang/String;" +     // caller object   #7
 			       "Ljava/lang/Object;" +     // caller object   #8
 			       "Ljava/lang/Thread;)V");   // current thread  #9
@@ -301,7 +280,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 			       "Ljava/lang/Object;" +     // stored obj      #2
 			       "Ljava/lang/String;" +     // caller static   #3
 			       "Ljava/lang/String;" +     // caller static   #4
-			       "Ljava/lang/String;" +     // caller static   #5
+			       // "Ljava/lang/String;" +     // DESC   #5
 			       "Ljava/lang/String;" +     // caller object   #6
 			       "Ljava/lang/Object;" +     // caller object   #7
 			       "Ljava/lang/Thread;)V");   // current thread  #8
@@ -312,7 +291,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
       Inserting methodcalls to callbacks
       GETSTATIC, PUTSTATIC, GETFIELD, PUTFIELD
     */
-    public void visitFieldInsn(int opcode,
+    @Override public void visitFieldInsn(int opcode,
     			       String owner,
     			       String name,
     			       String desc) {
@@ -356,13 +335,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 		//stack: objref value | objref null
 	    }
 
-
-	    //stack: objref value | objref (obj/arr/null)
-	    // if (name.equals("this$0")) {
-	    // 	push((String)null);    
-	    // }
-	    // else
-		if(fc == 'L' || fc == '[') {
+	    if(fc == 'L' || fc == '[') {
 	    	dup2();
 	    	//stack objref value | objref (obj/arr/null) objref (obj/arr/null)
 	    	pop();
@@ -376,7 +349,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	    //stack: objref value | objref (obj/arr/null) (oldvalue/null)
 	    push(owner);
 	    push(name);
-	    push(desc);
+	    // push(desc);
 	    insertThisOrStatic();
 	    addThreadAndField(1);
 	}
@@ -401,7 +374,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
 	    push(owner);
 	    push(name);
-	    push(desc);
+	    // push(desc);
 	    insertThisOrStatic();
 	    addThreadAndField(1);
 	}
@@ -413,10 +386,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	    //objref | objref
 	}
 
-
-
     	super.visitFieldInsn(opcode,owner,name,desc);
-
 
 
     	//getfield objref -> value
@@ -445,13 +415,11 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     	    }
     	    push(owner);
     	    push(name);
-    	    push(desc);
+    	    // push(desc);
     	    insertThisOrStatic();
     	    addThreadAndField(0);
 	    
     	}
-
-
 
     	else if (opcode == GETSTATIC ) {
     	    push((String)null);
@@ -463,62 +431,159 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     	    }
     	    push(owner);
     	    push(name);
-    	    push(desc);
+    	    // push(desc);
     	    insertThisOrStatic();
     	    addThreadAndField(0);
     	}
     }
 
+/******************************************************************************/
+/* store/load var                                                             */
+/******************************************************************************/
+    
+    @Override public void visitJumpInsn(int opcode,
+			      Label label) {
+	if (opcode == JSR) {
+	    jsr = true;
+	}
+	super.visitJumpInsn(opcode,label);
+    }
+
+    /*
+      Possible OPCODES:
+      ILOAD, LLOAD, FLOAD, DLOAD, ALOAD, ISTORE, LSTORE, FSTORE, DSTORE, ASTORE, RET
+
+      Inserting methodcalls to callbacks when OPCODE == ALOAD/ASTORE
+
+     */
+
+
+
+    private void pushLocal() {
+	mv.visitVarInsn(ALOAD,localIndex);
+	mv.visitMethodInsn(INVOKEVIRTUAL,
+			   "LocalVariableTableXYZ",
+			   "getLocalVariables",
+			   "()[I");
+    }
+
+    private void setLocal(int var) {
+	int slot = var < localIndex ? var : var+1;
+	mv.visitVarInsn(ALOAD,localIndex);
+	push(slot);
+	mv.visitMethodInsn(INVOKEVIRTUAL,
+			   "LocalVariableTableXYZ",
+			   "add",
+			   "(I)V");
+    }
+
+    private void removeLocal(int var) {
+	int slot = var < localIndex ? var : var+1;
+	mv.visitVarInsn(ALOAD,localIndex);
+	push(slot);
+	mv.visitMethodInsn(INVOKEVIRTUAL,
+			   "LocalVariableTableXYZ",
+			   "remove",
+			   "(I)V");
+    }
+
+
+    private void pushOldOrNull(int var) {
+	Label elseLabel = new Label();
+	Label endLabel = new Label();
+	int slot = var < localIndex ? var : var + 1;
+
+	mv.visitVarInsn(ALOAD,localIndex);
+	push(slot);
+	mv.visitMethodInsn(INVOKEVIRTUAL,
+			   "LocalVariableTableXYZ",
+			   "exist",
+			   "(I)I");
+
+	push(-1);
+	// mv.visitInsn(ICONST_M1);
+
+	mv.visitJumpInsn(IF_ICMPEQ,elseLabel);
+	mv.visitVarInsn(ALOAD,slot); 
+	// mv.visitInsn(ACONST_NULL);
+	mv.visitJumpInsn(GOTO,endLabel);
+	mv.visitLabel(elseLabel);
+	//mv.visitInsn(ACONST_NULL);
+	push((String) null);
+	mv.visitLabel(endLabel);
+	
+	// push((String) null);
+    }
+
+
+    @Override public void visitVarInsn(int opcode,
+				       int var) {
+	if (!storeVar || disableAll) {
+	    super.visitVarInsn(opcode,var);
+	    return;
+	}
+
+	if (opcode == DSTORE || opcode == LSTORE) {
+	    removeLocal(var);
+	    removeLocal(var+1);
+	}
+	else if (opcode == ISTORE || opcode == FSTORE) {
+	    removeLocal(var);
+	}
+
+	if (opcode == ASTORE) {
+	    if (jsr) {
+		jsr = false;
+		removeLocal(var);
+		super.visitVarInsn(opcode,var);
+		return;
+	    }
+	    dup(); // #1
+	    int slot = var < localIndex ? var : var + 1;
+	    mv.visitVarInsn(ALOAD,localIndex);
+	    push(slot);
+	    mv.visitMethodInsn(INVOKEVIRTUAL,
+			       "LocalVariableTableXYZ",
+			       "exist",
+			       "(I)I"); // #2
+
+	    insertThisOrStatic(); // #3-4
+	    mv.visitMethodInsn(INVOKESTATIC,
+	    		       "java/lang/Thread",
+	    		       "currentThread",
+	    		       "()Ljava/lang/Thread;"); // #5
+	    mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","storeVar",
+	    		       "(Ljava/lang/Object;" +    // stored obj      #1
+			       // "Ljava/lang/Object;" +     // old obj         #2
+			       "I" +
+	    		       "Ljava/lang/String;" +     // callee static   #3
+	    		       "Ljava/lang/Object;" +     // callee obj      #4
+	    		       "Ljava/lang/Thread;)V");   // current thread  #5
+
+
+
+	}
+    	super.visitVarInsn(opcode,var);
+
+	// Set bit indicating that local variable var holds an obj.
+	if (opcode==ASTORE) {
+	    setLocal(var);
+	}
+    }
 
 /******************************************************************************/
 /* onMethodEnter onMethodExit visitMaxs                                       */
 /******************************************************************************/
 
-
-    @Override protected void onMethodExit(int opcode) {
-	// System.out.println("ASM onMetExit: "+ des + " "  + met );
-	if (!methodExit || disableAll) {
-	    return;
-	}
-	
-	if (opcode == ATHROW) {
-	    
-	    return;
-	}
-
-
-	if (opcode == ARETURN) {
-	    dup();
-	}
-	else {
-	    push((String)null);
-	}
-	//ref ref
-	push(met);
-	push(des);
-	insertThisOrStatic();
-
-	// todo make a new array with out of scopes
-	push((String)null);
-	
-	mv.visitMethodInsn(INVOKESTATIC,
-			   "java/lang/Thread",
-			   "currentThread",
-			   "()Ljava/lang/Thread;");
-
-	mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","methodExit",
-			   "(Ljava/lang/Object;" +    // returned obj    #1
-			   "Ljava/lang/String;" +     // name            #2
-			   "Ljava/lang/String;" +     // desc            #3
-			   "Ljava/lang/String;" +     // staticcallee    #4
-			   "Ljava/lang/Object;" +     // callee          #5
-			   "[Ljava/lang/Object;" +    // out of scopes   #6
-			   "Ljava/lang/Thread;)V");   // current thread  #7
-    }
-
-
-
+    private int bzz = 0;
     /*
+      TODO:
+      
+      SIDE EFFECTS
+        - Adds a local variable to the visited method, and stores the index in the private
+	  field "localIndex".
+	- Makes a new LocalVariableTable and stores it to localIndex.
+
       Adds bytecode containing methods calls to native callback with:
         * Method name/Description 
 	* Callee(String) if static met
@@ -530,60 +595,88 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 	if (!methodEnter || disableAll) {
 	    return;
 	}
+	
+  
+	//localIndex = newLocal(Type.INT_TYPE);
+	localIndex = newLocal(Type.getObjectType("LocalVariableTableXYZ")); 
+	mv.visitTypeInsn(NEW,"LocalVariableTableXYZ");
+	dup();
+	push(localIndex);
+	mv.visitMethodInsn(INVOKESPECIAL,
+			   "LocalVariableTableXYZ",
+			   "<init>",
+			   "(I)V");
+
+
+	mv.visitVarInsn(ASTORE,localIndex);
+
+	
     	int parametersCounter = countParameters();
-    	int[] parameters;
+	int[] parameters = null;
 
 	mv.visitLdcInsn(met);          // #1
-	mv.visitLdcInsn(des);          // #2
-	insertThisOrStatic();          // #3-4
+	insertThisOrStatic();          // #2-3
 
 	if (parametersCounter > 0) {
 	    parameters = new int[parametersCounter];
 	    fillParameters(parameters);
-	    //System.err.println(klass);
-	    // if (klass.equals("org/eclipse/jdt/internal/core/DeltaProcessor$RootInfo") &&
-	    // 	met.equals("<init>")) {
-	    // 	System.err.println(klass + " " + des);
-	    // 	System.err.println("number of parameters: " + parametersCounter);
-	    // 	System.err.println(Arrays.toString(parameters));
-		
-	    // }
-	    
 	    mv.visitIntInsn(BIPUSH,parameters.length);
-	    mv.visitTypeInsn(ANEWARRAY,"java/lang/Object"); // #5
+	    mv.visitTypeInsn(ANEWARRAY,"java/lang/Object"); // #4
 
 	    for (int i = 0; i < parameters.length;i++) {
 		mv.visitInsn(DUP);
 		mv.visitIntInsn(BIPUSH,i);
-		if (isMetStatic) {
-		    mv.visitVarInsn(ALOAD,parameters[i]-1);
-		}
-		else {
-		    mv.visitVarInsn(ALOAD,parameters[i]);
-		}
+		mv.visitVarInsn(ALOAD,parameters[i]);
 		mv.visitInsn(AASTORE);
+	    }
+	    for (int i = 0; i < parameters.length;i++) {
+		setLocal(parameters[i]);
 	    }
 	}
 	else {
-	    mv.visitInsn(ACONST_NULL);     // 5
+	    mv.visitInsn(ACONST_NULL);     // #4
 	}
-
 	mv.visitMethodInsn(INVOKESTATIC,
 			   "java/lang/Thread",
 			   "currentThread",
-			   "()Ljava/lang/Thread;"); //6
-
+			   "()Ljava/lang/Thread;"); // #5
 	mv.visitMethodInsn(INVOKESTATIC,
 			   "NativeInterface",
 			   "methodEnter",
 			   "(Ljava/lang/String;" +    // method name    #1
-			   "Ljava/lang/String;" +     // desc           #2
-			   "Ljava/lang/String;" +     // callee static  #3
-			   "Ljava/lang/Object;" +     // callee object  #4
-			   "[Ljava/lang/Object;" +    // args           #5
-			   "Ljava/lang/Thread;)V");   // current thread #6
+			   "Ljava/lang/String;" +     // callee static  #2
+			   "Ljava/lang/Object;" +     // callee object  #3
+			   "[Ljava/lang/Object;" +    // args           #4
+			   "Ljava/lang/Thread;)V");   // current thread #5
     }
 
+
+    @Override protected void onMethodExit(int opcode) {
+	if (!methodExit || disableAll) {
+	    return;
+	}
+	if (opcode == ARETURN) {
+	    dup();
+	}
+	else {
+	    push((String)null);
+	}
+	push(met);
+	insertThisOrStatic();
+	pushLocal();
+	// push((String) null);
+	mv.visitMethodInsn(INVOKESTATIC,
+			   "java/lang/Thread",
+			   "currentThread",
+			   "()Ljava/lang/Thread;");
+	mv.visitMethodInsn(INVOKESTATIC,"NativeInterface","methodExit",
+			   "(Ljava/lang/Object;" +    // returned obj    #1
+			   "Ljava/lang/String;" +     // name            #2
+			   "Ljava/lang/String;" +     // staticcallee    #4
+			   "Ljava/lang/Object;" +     // callee          #5
+			   "[I" +
+			   "Ljava/lang/Thread;)V");   // current thread  #8
+    }
 
 
     @Override public void visitMaxs(int maxStack, int maxLocals) {
@@ -634,6 +727,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     	return parameterCounter;
     }
 
+
     // Fills arr with numbers that corresponds to local variable 
     // indices where objects/arrays are stored.
     private void fillParameters(int[]arr) {
@@ -642,6 +736,9 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     	int i = 1;
     	int arrayindex = 0;
     	int currentslot = 1;
+	if (isMetStatic) {
+	    currentslot = 0;
+	}
     	char current = des.charAt(i);
     	while (current != ')') {
     	    if (current == '[') {
@@ -665,7 +762,6 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     		    current = des.charAt(++i);
     		}
     		current = des.charAt(++i);
-		
     	    }
     	    else if (current == 'D' || current == 'J') {
     		currentslot+=2;
@@ -676,7 +772,6 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     		current = des.charAt(++i);
     	    }
     	}
-	
+	bzz = currentslot;
     }
-
 }
