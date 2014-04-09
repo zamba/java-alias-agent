@@ -316,28 +316,30 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
       if (argcount > 0) {
     	for (int i=0;i < argcount;i++){
     	  jobject current = env->GetObjectArrayElement((jobjectArray)args, i);
-    	  jlong current_tag = 0;
-    	  g_jvmti->GetTag(current,&current_tag);
-    	  env->DeleteLocalRef(current);
+	  if (current != NULL) {
+	    jlong current_tag = 0;
+	    g_jvmti->GetTag(current,&current_tag);
+	    env->DeleteLocalRef(current);
 
-    	  if (current_tag > 0) {
-	    if (gz) {
-	      out << to_string(current_tag) << " ";
+	    if (current_tag > 0) {
+	      if (gz) {
+		out << to_string(current_tag) << " ";
+	      }
+	      else {
+		fprintf(pFile,"%ld ",current_tag);
+	      }
 	    }
 	    else {
-	      fprintf(pFile,"%ld ",current_tag);
+	      /* generate new event */
+	      g_jvmti->SetTag(current,g_objectid++);
+	      if (gz) {
+		out << to_string(g_objectid-1) << " ";
+	      }
+	      else {
+		fprintf(pFile,"%ld ",g_objectid - 1);
+	      }
 	    }
-    	  }
-    	  else {
-    	    /* generate new event */
-    	    g_jvmti->SetTag(current,g_objectid++);
-	    if (gz) {
-	      out << to_string(g_objectid-1) << " ";
-	    }
-	    else {
-	      fprintf(pFile,"%ld ",g_objectid - 1);
-	    }
-    	  }
+	  }
     	}
       }
       if (gz) {
