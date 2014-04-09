@@ -1,6 +1,6 @@
 * OUTPUT DOCUMENTATION
 ** EVENTS
-The events are separated by a NEWLINE('\n').
+The output consist of events that are separated by a newline character('\n').
 
 ** Identifiers and primitive fields
 All identifiers are supposed to be larger than 0,
@@ -8,6 +8,7 @@ except primitive fields or if something else is stated.
 
 Field stores/loads of primitive type are traced,
 but not the values.
+
 
 ** OPCODE
 The first character in every line is
@@ -22,7 +23,7 @@ deallocation	5
 return		6
 storevar	7
 
-** Allocation
+** 1 Allocation
 The allocation event is formed as: 
 1 X Y Z
 
@@ -32,38 +33,46 @@ Y = TYPE = describes the allocated object's TYPE
 Z = STRING/LONG = describes the caller to new.
                   If the caller is static Z will be a string,
 		  else Z will be a long.
-** Field Load
+** 2 Field Load
 The field load event is formed as:
-2 X(Y) Z A K
+2 X Z A K
 
 where:
 X = string = field name
-Y = string = field description
 Z = long = Identifies the loaded object
 A = STRING/LONG = Identifies caller
 K = STRING/LONG = Identifies callee
 
-** Field Store
+** 3 Field Store
 The field store event is formed as:
-3 X(Y) Z O A K
+3 X Z O A K
 
 where:
 X = string = field name
-Y = string = field description
 Z = long = Identifies the stored object
 O = long = Identifies the object that was held by the field before... (the overwritten object)
            O can be 0.
 A = STRING/LONG = Identifies caller
 K = STRING/LONG = Identifies callee
 
-** Deallocation
+** 4 Method Call
+The variable store event is formed as:
+4 X Z A K
+
+where:
+X = string = method name
+Z = STRING/LONG = CALLER
+A = STRING/LONG = CALLEE
+K = LONG* = space separated tags that identifies
+            the arguments passed to this method
+** 5 Deallocation
 The deallocation event is formed as:
 5 X
 
 where:
 X = long = Identifies the garbage collected object
 
-** Variable Store
+** 7 Variable Store
 The variable store event is formed as:
 7 X Y Z
 
@@ -72,17 +81,8 @@ X = LONG = stored obj
 Y = LONG = old value
 Z = STRING/LONG = CALLER/CALLEE
 
-** Method Call
-The variable store event is formed as:
-4 X(Y) Z A K
 
-where:
-X = string = method name
-Y = string = method description
-Z = STRING/LONG = CALLER
-A = STRING/LONG = CALLEE
-K = LONG* = space separated tags that identifies
-            the arguments passed to this method
+
 * Benchmarks in Dacapo
   AVRORA
   BATIK
@@ -99,50 +99,14 @@ K = LONG* = space separated tags that identifies
   tradesoap
   xalan
 
-* Event status
-** DONE STOREFIELD
-** DONE LOADFIELD
-** DONE DEALLOC
-** DONE ALLOC
-** DONE STOREVAR
-** DONE METHODCALL
-** TODO METHODRETURN
-
-   
-
-* Failing benchmarks
-** Using Fields
-   AVRORA
-   TOMCAT
-   TRADEBEANS
-   TRADESOAP
-** Using Fields & Allocs
-   Same as "Using Fields" + ECLIPSE
-   (Eclipse can run with the -noverify option to java though)
-   
-
-
-** Using Fields & Allocs & VARS
-*** avrora/tomcat/tradebeans/tradesoap still fails
-
-** Using Fields & ALLOCs & VARS & METHODCALLS
-AVRORA FAIL
-BATIK COMPLETES
-ECLIPSE COMPLETES WITH 30x overhead
-
-
-** Using all events
-   eclipse 60x~ overhead
-
-
 
 * TODOs
-** TODO Make use of zlib-dev instead of piping to gzip
-** TODO Reimplement variable overwrites
-** TODO Reimplement variable out of scopes
+** DONE Make use of zlib-dev instead of piping to gzip
+** DONE Reimplement variable overwrites
+** DONE Reimplement variable out of scopes
 ** TODO Implement AASTOREs
 
-** TODO Instrument classes loaded with bootstrapclassloader too
+** DONE Instrument classes loaded with bootstrapclassloader too
    Find out why sigsegv occurs
 ** TODO If above works. Reimplement NEW
 ** TODO Extend command line options that handles instrumentation switches and output methods
