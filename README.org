@@ -56,7 +56,7 @@ A = STRING/LONG = Identifies caller
 K = STRING/LONG = Identifies callee
 
 ** 4 Method Call
-The variable store event is formed as:
+The method call event is formed as:
 4 X Z A K
 
 where:
@@ -71,6 +71,19 @@ The deallocation event is formed as:
 
 where:
 X = long = Identifies the garbage collected object
+
+** 6 Method Exit
+The method exit event is formed as:
+6 X Y Z A K
+
+where:
+X = string = method name
+Y = long = returned obj's tag or 0
+Z = STRING/LONG = CALLER
+A = STRING/LONG = CALLEE
+K = LONG* = space separated tags that identifies
+            the object that goes out of scope after
+	    this event
 
 ** 7 Variable Store
 The variable store event is formed as:
