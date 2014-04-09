@@ -21,6 +21,7 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
     private boolean storeVar = true;
     private boolean newObjs = true;
     private boolean fieldUse = true;
+
     private boolean disableAll = false;
 
     private int varStatus = 0;
@@ -98,11 +99,11 @@ public class AddMethodEnterAdapter extends AdviceAdapter {
 
 
     public void insertThisOrStatic() {
-	if (met.equals("<init>")) {
-	    push((String)null);
-	    push((String)null);
-	    return;
-	}
+	// if (met.equals("<init>")) {
+	//     push((String)null);
+	//     push((String)null);
+	//     return;
+	// }
 
 	if (isMetStatic) {
 	    mv.visitLdcInsn(klass);
