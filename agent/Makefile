@@ -1,26 +1,26 @@
-DACAPO = /home/erik/Desktop/dacapo-9.12-bach.jar
-
+DACAPO=../dacapo/dacapo-9.12-bach.jar
 #lib/java_util_hashtable.jar
-BCP = -Xbootclasspath/p:$(PA)/lib/asm-all-4.2.jar:$(PA)/lib/awio.jar
-JLIB = -cp lib/java_util_hashtable.jar:lib/asm-all-4.2.jar
+BCP=-Xbootclasspath/p:$(PA)/lib/asm-all-4.2.jar:$(PA)/lib/awio.jar
+JLIB=-cp lib/java_util_hashtable.jar:lib/asm-all-4.2.jar
 
-UNAME = $(shell uname)
-PA = $(shell pwd)
+UNAME=$(shell uname)
+PA=$(shell pwd)
+CCFILES=$(shell ls *.cpp)
 
 ifeq ($(UNAME),Linux)
-	CC = g++
-	temp = $(shell which javac)
-	INCLUDE = $(subst bin/javac,include,$(temp))
-	IFLAGS = -I $(INCLUDE) -I $(INCLUDE)/linux
+	CC=g++
+	temp=$(shell which javac)
+	INCLUDE=$(subst bin/javac,include,$(temp))
+	IFLAGS=-I $(INCLUDE) -I $(INCLUDE)/linux
 endif
 
 ifeq ($(UNAME),Darwin)
-	CC = clang++
-	IFLAGS = -I /System/Library/Frameworks/JavaVM.framework/Headers -I /Library/Java/JavaVirtualMachines/jdk1.7.0_21.jdk/Contents/Home/include/ -I /opt/local/lib/gcc48/gcc/x86_64-apple-darwin12/4.8.1/include/
-	LIBS = -stdlib=libc++
+	CC=clang++
+	IFLAGS=-I /System/Library/Frameworks/JavaVM.framework/Headers -I /Library/Java/JavaVirtualMachines/jdk1.7.0_21.jdk/Contents/Home/include/ -I /opt/local/lib/gcc48/gcc/x86_64-apple-darwin12/4.8.1/include/
+	LIBS=-stdlib=libc++
 endif
 
-all:		
+all: $(DACAPO) $(CCFILES)
 	${CC} -I. -O -c -fPIC -o gzstream.o gzstream.cpp
 	ar cr libgzstream.a gzstream.o
 
@@ -38,6 +38,8 @@ all:
 #${CC} -c -fPIC -I./gzstream -o gzstream.o gzstream/gzstream.C
 
 
+$(DACAPO):
+	test ! -e $(DACAPO) && (echo "can't find $(DACAPO). please download from http://www.dacapobench.org/"; false)
 
 test:
 	@javac -d . test/*.java
@@ -50,9 +52,8 @@ test:
 	@rm -f *.class
 	@rm -f test/*.class
 
-
-bench:
-	java -noverify $(BCP) -agentpath:./lib/testagent.so -jar $(DACAPO) -s small eclipse | gzip -f > output.gz
+bench: all $(DACAPO)
+	java -noverify $(BCP) -agentpath:./lib/testagent.so -jar $(DACAPO) -s small eclipse #| gzip -f > output.gz
 
 clean:
 	@rm -f *.class
@@ -72,4 +73,4 @@ clean:
 	@rm -f gzstream/gzstream.o
 	@rm -f libgzstream.a
 
-.PHONY: clean test bench jartest
+.PHONY: all clean test bench jartest

@@ -1341,14 +1341,12 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
 
     jni->SetByteArrayRegion(barr,0,class_data_len,(jbyte*)(class_data));
 
-
     jbyteArray new_barr = (jbyteArray) jni->CallStaticObjectMethod(g_cls,g_mid,barr);
 
     jni->DeleteLocalRef(barr);
     if (new_barr != NULL) {
 
       jint len = jni->GetArrayLength(new_barr);
-
 
       unsigned char *newclass;
       jvmtiError err = jvmti_env->Allocate(len,&newclass);
@@ -1365,7 +1363,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env,
       *new_class_data = newclass;
     }
     else {
-      printf("c++ failed to instrument: %s \n\n",name);
+      printf("%s:%i: failed to instrument: %s \n\n",__FILE__, __LINE__, name);
     }
 
   }exit_critical_section();
