@@ -244,7 +244,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
 	      out << to_string(caller_tag) << " ";
 	    }
 	    else {
-	      fprintf(pFile,"%ld ",caller_tag);
+	      fprintf(pFile,"%lld ",caller_tag);
 	    }
       	  }
 	  else {
@@ -280,7 +280,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
 	  out << to_string(callee_tag) << " ";
 	}
 	else {
-	  fprintf(pFile,"%ld ",callee_tag);
+	  fprintf(pFile,"%lld ",callee_tag);
 	}
       }
       else if (callee_tag == 0 && staticcallee != NULL) {
@@ -302,7 +302,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
 	  out << to_string(callee_tag);
 	}
 	else {
-	  fprintf(pFile,"%ld ",callee_tag);
+	  fprintf(pFile,"%lld ",callee_tag);
 	}
       }
 
@@ -326,7 +326,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
 		out << to_string(current_tag) << " ";
 	      }
 	      else {
-		fprintf(pFile,"%ld ",current_tag);
+		fprintf(pFile,"%lld ",current_tag);
 	      }
 	    }
 	    else {
@@ -336,7 +336,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodEnter
 		out << to_string(g_objectid-1) << " ";
 	      }
 	      else {
-		fprintf(pFile,"%ld ",g_objectid - 1);
+		fprintf(pFile,"%lld ",g_objectid - 1);
 	      }
 	    }
 	  }
@@ -496,7 +496,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 	  out << to_string(returned_tag) << " ";
 	}
 	else {
-	  fprintf(pFile,"%ld ",returned_tag);
+	  fprintf(pFile,"%lld ",returned_tag);
 	}
 
 	//export caller
@@ -568,12 +568,12 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 		caller_tag = g_objectid++;
 		g_jvmti->SetTag(callerobj,caller_tag);
 	      }
-	      fprintf(pFile,"%ld ",caller_tag);
+	      fprintf(pFile,"%lld ",caller_tag);
 	      if (gz) {
 		out << to_string(caller_tag) << " ";
 	      }
 	      else {
-		fprintf(pFile,"%ld ",caller_tag);
+		fprintf(pFile,"%lld ",caller_tag);
 	      }
 	    }
 	    else {
@@ -606,7 +606,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 	    out << to_string(callee_tag) << " ";
 	  }
 	  else {
-	    fprintf(pFile,"%ld ",callee_tag);
+	    fprintf(pFile,"%lld ",callee_tag);
 	  }
 	}
 	else if (callee_tag == 0 && staticcallee != NULL) {
@@ -626,7 +626,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 	    out << to_string(callee_tag) << " ";
 	  }
 	  else {
-	    fprintf(pFile,"%ld ",callee_tag);
+	    fprintf(pFile,"%lld ",callee_tag);
 	  }
 	}
 
@@ -641,7 +641,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_methodExit
 		if (error == JVMTI_ERROR_NONE) {
 		  jlong temp_tag = get_tag(temp_obj);
 		  if (temp_tag > 0) {
-		    fprintf(pFile,"%ld ",temp_tag);
+		    fprintf(pFile,"%lld ",temp_tag);
 		  }
 		  env->DeleteLocalRef(temp_obj);
 		}
@@ -768,7 +768,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_storeVar
 	  out << to_string(STOREVAR) << " " << to_string(stored_tag) << " ";
 	}
 	else {
-	  fprintf(pFile,"%d %ld ",STOREVAR,stored_tag);
+	  fprintf(pFile,"%d %lld ",STOREVAR,stored_tag);
 	}
 	if (stored_tag==17)
 	  a =1;
@@ -786,7 +786,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_storeVar
 	    // fprintf(stderr,"NOERROR:%d || storeVar() alias.cpp\n",error);
 	    jvmtiError err = g_jvmti->GetTag(old_obj,&old_tag);
 	    if (err == JVMTI_ERROR_NONE) {
-	      fprintf(pFile,"%ld ",old_tag);
+	      fprintf(pFile,"%lld ",old_tag);
 	    }
 	    else {
 	      fprintf(pFile,"0 "); 
@@ -813,7 +813,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_storeVar
 	    out << to_string(callee_tag) << "\n";
 	  }
 	  else {
-	    fprintf(pFile,"%ld\n",callee_tag);
+	    fprintf(pFile,"%lld\n",callee_tag);
 	  }
 	}
       }
@@ -869,7 +869,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_storeField
 	    to_string(new_val) << " " << to_string(old_val) << " ";
 	}
 	else {
-	  fprintf(pFile,"%d %s %ld %ld ",STOREFIELD,c_name,new_val,old_val);
+	  fprintf(pFile,"%d %s %lld %lld ",STOREFIELD,c_name,new_val,old_val);
 	}
 	env->ReleaseStringUTFChars(name, c_name);
 
@@ -895,7 +895,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_storeField
 	    out << to_string(caller_tag) << " ";
 	  }
 	  else {
-	    fprintf(pFile,"%ld ",caller_tag);
+	    fprintf(pFile,"%lld ",caller_tag);
 	  }
 	}
 
@@ -914,7 +914,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_storeField
 	    out << to_string(callee_tag) << "\n";
 	  }
 	  else {
-	    fprintf(pFile,"%ld\n",callee_tag);
+	    fprintf(pFile,"%lld\n",callee_tag);
 	  }
 	}
 
@@ -976,7 +976,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_loadField
 	    to_string(new_val) << " ";
 	}
 	else {
-	  fprintf(pFile,"%d %s %ld ",GETFIELD,c_name,new_val);
+	  fprintf(pFile,"%d %s %lld ",GETFIELD,c_name,new_val);
 	}
 	env->ReleaseStringUTFChars(name, c_name);
 
@@ -1002,7 +1002,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_loadField
 	    out << to_string(caller_tag) << " ";
 	  }
 	  else {
-	    fprintf(pFile,"%ld ",caller_tag);
+	    fprintf(pFile,"%lld ",caller_tag);
 	  }
 	}
 
@@ -1021,7 +1021,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_loadField
 	    out << callee_tag << "\n";
 	  }
 	  else {
-	    fprintf(pFile,"%ld\n",callee_tag);
+	    fprintf(pFile,"%lld\n",callee_tag);
 	  }
 	}
       }
@@ -1085,7 +1085,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_newObj
 	  out << to_string(ALLOC) << " " << to_string(stored_tag) << " " << type;
 	}
 	else {
-	  fprintf(pFile,"%d %ld %s ",ALLOC,stored_tag,type);
+	  fprintf(pFile,"%d %lld %s ",ALLOC,stored_tag,type);
 	}
 	env->ReleaseStringUTFChars(desc, type);
 	
@@ -1095,7 +1095,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_newObj
 	    out << to_string(caller_tag) << "\n";
 	  }
 	  else {
-	    fprintf(pFile,"%ld\n",caller_tag);
+	    fprintf(pFile,"%lld\n",caller_tag);
 	  }
 	}
 	else if (staticcaller) {
@@ -1169,7 +1169,7 @@ JNIEXPORT void JNICALL Java_NativeInterface_newObj
 		  out << to_string(caller_tag) << "\n";
 		}
 		else {
-		  fprintf(pFile,"%ld\n",caller_tag);
+		  fprintf(pFile,"%lld\n",caller_tag);
 		}
 	      }
 	    }
@@ -1264,7 +1264,7 @@ cbObjectFree(jvmtiEnv *jvmti_env,
       out << to_string(DEALLOC) << " " <<to_string(tag) << "\n";
     }
     else {
-      fprintf(pFile,"%d %ld\n",DEALLOC,tag);
+      fprintf(pFile,"%d %lld\n",DEALLOC,tag);
     }
   }
   else {
